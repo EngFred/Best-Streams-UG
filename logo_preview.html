@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>BestStreams logo preview — cinematic splash</title>
+<style>
+  body { margin:0; background:#0b0b12; color:#e6e6ef; font-family:-apple-system,"Segoe UI",Roboto,sans-serif; }
+  .strip { display:flex; flex-wrap:wrap; gap:48px; padding:56px; align-items:flex-start; }
+  h2 { font-weight:600; font-size:15px; color:#9a9ab2; letter-spacing:.08em; text-transform:uppercase; margin-bottom:16px; }
+  .card { background:#14141d; border:1px solid #26263a; border-radius:18px; padding:28px; }
+  .tile,.banner { display:flex; flex-direction:column; align-items:center; gap:14px; border-radius:12px; overflow:hidden; }
+  .tile svg { width:120px; height:120px; }
+  .banner svg { width:420px; height:236px; }
+  .splash { display:flex; flex-direction:column; align-items:center; gap:18px; border-radius:16px; overflow:hidden; background:#1E0A3A; padding:8px 34px 26px; }
+  .splash .wordmark { font-size:27px; font-weight:500; letter-spacing:.085em; color:#f5f3ff; }
+  .note { color:#9a9ab2; font-size:13px; max-width:360px; line-height:1.5; }
+  p.lead { color:#c9c9da; font-size:14px; max-width:600px; line-height:1.6; }
+</style>
+</head>
+<body>
+  <div class="strip">
+    <div class="card">
+      <h2>Splash — cinematic</h2>
+      <div class="splash">
+        <svg viewBox="0 0 108 108" width="430" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="vig" cx="50%" cy="48%" r="78%">
+              <stop offset="0%"  stop-color="#6E2BD6"/>
+              <stop offset="55%" stop-color="#4C1D95"/>
+              <stop offset="100%" stop-color="#1E0A3A"/>
+            </radialGradient>
+            <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%"  stop-color="#C4B5FD" stop-opacity="0.24"/>
+              <stop offset="100%" stop-color="#C4B5FD" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="surf" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"  stop-color="#FFFFFF"/>
+              <stop offset="45%" stop-color="#EFE9FF"/>
+              <stop offset="100%" stop-color="#C2B2F2"/>
+            </linearGradient>
+          </defs>
+          <rect width="108" height="108" fill="url(#vig)"/>
+          <circle cx="54" cy="54" r="34" fill="url(#glow)"/>
+          <g transform="translate(30,33)">
+            <g>
+              <path d="M13,0 L29,0 A13,13 0 0 1 42,13 L42,29 A13,13 0 0 1 29,42 L13,42 A13,13 0 0 1 0,29 L0,13 A13,13 0 0 1 13,0 Z" fill="url(#surf)"/>
+              <path d="M42,12 L56,21 L42,30 Z" fill="url(#surf)"/>
+            </g>
+          </g>
+        </svg>
+        <div class="wordmark">Best Streams UG</div>
+        <div class="note">Vignette backdrop + soft light glow behind the mark; mark has a light-to-lavender "surface" instead of flat white. Wordmark sits below on launch. Reversible to flat if you prefer.</div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>TV launcher tile (unchanged)</h2>
+      <div class="tile"><svg viewBox="0 0 108 108" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="108" height="108" fill="#5B21B6"/>
+        <path d="M43,33 L59,33 A13,13 0 0 1 72,46 L72,62 A13,13 0 0 1 59,75 L43,75 A13,13 0 0 1 30,62 L30,46 A13,13 0 0 1 43,33 Z" fill="#FFFFFF"/>
+        <path d="M72,45 L86,54 L72,63 Z" fill="#FFFFFF"/>
+      </svg><div class="note">Kept the pure-white mark: Android masks + adds the app label on the home screen, so the tile stays clean.</div></div>
+    </div>
+    <div class="card">
+      <h2>TV home banner (unchanged)</h2>
+      <div class="banner"><svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="320" height="180" fill="#5B21B6"/>
+        <path d="M127,43.8 H162.2 A28.6,28.6 0 0 1 190.8,72.4 V107.6 A28.6,28.6 0 0 1 162.2,136.2 H127 A28.6,28.6 0 0 1 98.4,107.6 V72.4 A28.6,28.6 0 0 1 127,43.8 Z" fill="#FFFFFF"/>
+        <path d="M190.8,70.2 L221.6,90 L190.8,109.8 Z" fill="#FFFFFF"/>
+      </svg><div class="note">Banner stays flat white for legibility on the TV home row.</div></div>
+    </div>
+  </div>
+</body>
+</html>
