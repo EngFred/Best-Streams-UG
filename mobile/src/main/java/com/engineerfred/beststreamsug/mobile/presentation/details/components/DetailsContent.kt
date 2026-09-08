@@ -360,16 +360,23 @@ private fun DetailsMetaSection(
                         }
                     },
                 )
-                .padding(horizontal = 20.dp, vertical = 14.dp),
+                .padding(horizontal = 20.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
         ) {
-            Icon(
-                imageVector = Icons.Rounded.PlayArrow,
-                contentDescription = null,
-                tint = CinematicBackground,
-                modifier = Modifier.size(22.dp),
-            )
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .background(Color.Black.copy(alpha = 0.10f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.PlayArrow,
+                    contentDescription = null,
+                    tint = CinematicBackground,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
             Spacer(modifier = Modifier.width(10.dp))
             Text(
                 text = "Play",

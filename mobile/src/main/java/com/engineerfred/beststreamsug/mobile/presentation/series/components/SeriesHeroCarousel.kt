@@ -231,7 +231,7 @@ private fun SeriesActionButton(
     val interactionSource = remember { MutableInteractionSource() }
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
             .background(
                 color = if (isPrimary) Color.White else Color(0xFF2B2F37).copy(alpha = 0.85f),
@@ -242,14 +242,35 @@ private fun SeriesActionButton(
                 indication = null,
                 onClick = onClick,
             )
-            .padding(horizontal = 18.dp, vertical = 11.dp),
+            .padding(
+                start = if (isPrimary) 8.dp else 18.dp,
+                end = 18.dp,
+                top = if (isPrimary) 6.dp else 11.dp,
+                bottom = if (isPrimary) 6.dp else 11.dp,
+            ),
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = if (isPrimary) CinematicBackground else Color.White,
-            modifier = Modifier.size(20.dp),
-        )
+        if (isPrimary) {
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .background(Color.Black.copy(alpha = 0.10f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = CinematicBackground,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+        } else {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(20.dp),
+            )
+        }
         Text(
             text = label,
             style = MaterialTheme.typography.labelLarge,
