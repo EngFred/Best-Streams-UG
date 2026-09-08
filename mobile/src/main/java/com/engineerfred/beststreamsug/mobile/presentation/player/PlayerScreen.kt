@@ -17,17 +17,22 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -35,6 +40,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -57,7 +63,6 @@ import androidx.compose.material.icons.rounded.Replay10
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -75,21 +80,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.AspectRatioFrameLayout
@@ -132,7 +137,6 @@ fun PlayerRoute(
     val activity = remember(context) { context.findActivity() }
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-    val lifecycleOwner = LocalLifecycleOwner.current
 
     var isControlsVisible by remember { mutableStateOf(true) }
     var scaleMode by rememberSaveable { mutableStateOf(VideoScaleMode.Fit) }
@@ -178,10 +182,23 @@ fun PlayerRoute(
         }
     }
 
-    // ── Restore Portrait upon leaving Player ─────────────────────────────────
+    // ── Restore Portrait, reset brightness override, and clear auto PiP ─────
     DisposableEffect(Unit) {
         onDispose {
             activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            activity?.window?.let { window ->
+                val lp = window.attributes
+                lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                window.attributes = lp
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                try {
+                    val params = PictureInPictureParams.Builder()
+                        .setAutoEnterEnabled(false)
+                        .build()
+                    activity?.setPictureInPictureParams(params)
+                } catch (_: Exception) {}
+            }
         }
     }
 
@@ -239,34 +256,31 @@ fun PlayerRoute(
         }
     }
 
-    // ── PiP helper ───────────────────────────────────────────────────────────
-    val enterPip: () -> Unit = {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            activity?.enterPictureInPictureMode(
-                PictureInPictureParams.Builder()
+    // ── PiP: Enable auto-enter on background (Android 12+) and manual PiP ────
+    LaunchedEffect(state.isCasting, state.isPlaying) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val shouldAutoEnter = !state.isCasting && state.isPlaying
+            try {
+                val params = PictureInPictureParams.Builder()
                     .setAspectRatio(Rational(16, 9))
+                    .setAutoEnterEnabled(shouldAutoEnter)
                     .build()
-            )
+                activity?.setPictureInPictureParams(params)
+            } catch (_: Exception) {}
         }
     }
 
-    // ── Auto-enter PiP when app goes to background while playing locally ─────
-    // Capture stable values to avoid capturing the whole state in the observer
-    val isCastingSnapshot = state.isCasting
-    val isPlayingSnapshot = state.isPlaying
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_PAUSE) {
-                val alreadyInPip = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    activity?.isInPictureInPictureMode ?: false
-                } else false
-                if (!alreadyInPip && !isCastingSnapshot && isPlayingSnapshot) {
-                    enterPip()
+    val enterPip: () -> Unit = {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                val builder = PictureInPictureParams.Builder()
+                    .setAspectRatio(Rational(16, 9))
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    builder.setAutoEnterEnabled(!state.isCasting && state.isPlaying)
                 }
-            }
+                activity?.enterPictureInPictureMode(builder.build())
+            } catch (_: Exception) {}
         }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     // ── Landscape back: rotate back to portrait ──────────────────────────────
@@ -491,6 +505,7 @@ fun PlayerRoute(
                 onSeekBy = { deltaMs ->
                     if (deltaMs < 0) viewModel.seekBackward() else viewModel.seekForward()
                 },
+                onSeekTo = viewModel::seekTo,
                 onEnterPip = enterPip,
             )
         }
@@ -584,6 +599,7 @@ private fun PlayerControlsOverlay(
     onCycleScaleMode: () -> Unit,
     onPlayPause: () -> Unit,
     onSeekBy: (Long) -> Unit,
+    onSeekTo: (Long) -> Unit,
     onEnterPip: () -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
@@ -675,12 +691,12 @@ private fun PlayerControlsOverlay(
                     .size(40.dp)
                     .alpha(scaleAlpha)
                     .background(Color.Black.copy(alpha = 0.4f), CircleShape)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        enabled = !isCasting,
-                        onClick = onCycleScaleMode,
-                    ),
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    enabled = !isCasting,
+                    onClick = onCycleScaleMode,
+                ),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -781,20 +797,18 @@ private fun PlayerControlsOverlay(
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = 16.dp, vertical = 2.dp),
         ) {
-            LinearProgressIndicator(
-                progress = {
-                    if (durationMs <= 0) 0f else (positionMs.toFloat() / durationMs).coerceIn(0f, 1f)
-                },
+            CinematicScrubber(
+                positionMs = positionMs,
+                durationMs = durationMs,
+                onSeekTo = onSeekTo,
                 modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.primary,
-                trackColor = Color.White.copy(alpha = 0.3f),
             )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 6.dp),
+                    .padding(horizontal = 2.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -845,6 +859,156 @@ private fun PlayerControlsOverlay(
                     )
                 }
             }
+        }
+    }
+}
+
+// ── Cinematic Video Scrubber ──────────────────────────────────────────────────
+@Composable
+private fun CinematicScrubber(
+    positionMs: Long,
+    durationMs: Long,
+    onSeekTo: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    var isDragging by remember { mutableStateOf(false) }
+    var dragFraction by remember { mutableFloatStateOf(0f) }
+
+    val currentFraction = if (durationMs > 0) {
+        (positionMs.toFloat() / durationMs).coerceIn(0f, 1f)
+    } else 0f
+
+    val effectiveFraction = if (isDragging) dragFraction else currentFraction
+    val scrubTimeMs = if (durationMs > 0) (effectiveFraction * durationMs).toLong() else 0L
+
+    val trackHeight by animateDpAsState(
+        targetValue = if (isDragging) 6.dp else 3.5.dp,
+        label = "trackHeight",
+    )
+    val thumbOuterSize by animateDpAsState(
+        targetValue = if (isDragging) 18.dp else 10.dp,
+        label = "thumbOuterSize",
+    )
+    val thumbInnerSize by animateDpAsState(
+        targetValue = if (isDragging) 12.dp else 10.dp,
+        label = "thumbInnerSize",
+    )
+
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(38.dp)
+            .pointerInput(enabled, durationMs) {
+                if (!enabled || durationMs <= 0) return@pointerInput
+                detectTapGestures(
+                    onPress = { offset ->
+                        isDragging = true
+                        val frac = (offset.x / size.width).coerceIn(0f, 1f)
+                        dragFraction = frac
+                        val success = tryAwaitRelease()
+                        if (success) {
+                            onSeekTo((frac * durationMs).toLong())
+                        }
+                        isDragging = false
+                    }
+                )
+            }
+            .pointerInput(enabled, durationMs) {
+                if (!enabled || durationMs <= 0) return@pointerInput
+                detectDragGestures(
+                    onDragStart = { offset ->
+                        isDragging = true
+                        dragFraction = (offset.x / size.width).coerceIn(0f, 1f)
+                    },
+                    onDrag = { change, _ ->
+                        change.consume()
+                        dragFraction = (change.position.x / size.width).coerceIn(0f, 1f)
+                    },
+                    onDragEnd = {
+                        onSeekTo((dragFraction * durationMs).toLong())
+                        isDragging = false
+                    },
+                    onDragCancel = {
+                        isDragging = false
+                    }
+                )
+            },
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        val totalWidthPx = constraints.maxWidth.toFloat()
+        val thumbOffsetPx = (totalWidthPx * effectiveFraction).coerceIn(0f, totalWidthPx)
+
+        // Floating timestamp preview badge during scrub
+        if (isDragging) {
+            val bubbleOffsetDp = with(LocalDensity.current) {
+                (thumbOffsetPx - 32.dp.toPx()).coerceIn(0f, (totalWidthPx - 64.dp.toPx()).coerceAtLeast(0f)).toDp()
+            }
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .offset(x = bubbleOffsetDp, y = (-6).dp)
+                    .background(Color.Black.copy(alpha = 0.85f), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+            ) {
+                Text(
+                    text = formatPlayerTime(scrubTimeMs),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = CinematicPrimary,
+                    fontSize = 11.sp,
+                )
+            }
+        }
+
+        // Custom drawn track
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(trackHeight)
+                .align(Alignment.Center)
+        ) {
+            val heightPx = size.height
+            val radius = heightPx / 2f
+
+            // Inactive track
+            drawRoundRect(
+                color = Color.White.copy(alpha = 0.25f),
+                size = size,
+                cornerRadius = CornerRadius(radius, radius)
+            )
+
+            // Active played track
+            if (thumbOffsetPx > 0f) {
+                drawRoundRect(
+                    color = CinematicPrimary,
+                    size = Size(thumbOffsetPx, heightPx),
+                    cornerRadius = CornerRadius(radius, radius)
+                )
+            }
+        }
+
+        // Scrubber thumb with animated glow effect when scrubbing
+        val thumbOffsetDp = with(LocalDensity.current) {
+            (thumbOffsetPx - (thumbOuterSize.toPx() / 2f)).coerceIn(0f, (totalWidthPx - thumbOuterSize.toPx()).coerceAtLeast(0f)).toDp()
+        }
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .offset(x = thumbOffsetDp)
+                .size(thumbOuterSize)
+                .background(
+                    if (isDragging) CinematicPrimary.copy(alpha = 0.35f) else Color.Transparent,
+                    CircleShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(thumbInnerSize)
+                    .background(CinematicPrimary, CircleShape)
+            )
         }
     }
 }
