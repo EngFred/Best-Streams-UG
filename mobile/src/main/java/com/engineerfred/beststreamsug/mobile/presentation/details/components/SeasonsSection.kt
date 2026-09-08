@@ -119,9 +119,11 @@ fun SeasonsSection(
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                     modifier = Modifier.padding(top = 4.dp),
                 ) {
+                    val vjName = details.summary.vjName ?: details.languageName
                     visibleEpisodes.forEach { episode ->
                         EpisodeRow(
                             episode = episode,
+                            vjName = vjName,
                             onPlay = onPlay,
                         )
                     }
@@ -189,6 +191,7 @@ private fun SeasonSelector(
 @Composable
 private fun EpisodeRow(
     episode: Episode,
+    vjName: String?,
     onPlay: (url: String, title: String?, meta: String?, poster: String?) -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -204,7 +207,7 @@ private fun EpisodeRow(
                         onPlay(
                             url,
                             episode.title,
-                            "Episode ${episode.sortOrder}",
+                            vjName ?: "Episode ${episode.sortOrder}",
                             episode.landscapeUrl ?: episode.thumbnailUrl,
                         )
                     }

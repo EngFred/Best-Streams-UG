@@ -351,11 +351,11 @@ private fun DetailsMetaSection(
                     indication = null,
                     onClick = {
                         mainSource?.let {
-                            val language = details.languageName
+                            val vjName = summary.vjName ?: details.languageName
                             onPlay(
                                 it,
                                 summary.title,
-                                language ?: details.categoryNames.firstOrNull(),
+                                vjName ?: details.categoryNames.firstOrNull(),
                                 summary.landscapeUrl ?: summary.thumbnailUrl,
                             )
                         }
