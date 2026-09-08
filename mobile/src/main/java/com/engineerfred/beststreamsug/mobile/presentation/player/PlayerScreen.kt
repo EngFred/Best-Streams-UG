@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,17 +25,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.CastConnected
+import androidx.compose.material.icons.rounded.Forward10
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Replay10
-import androidx.compose.material.icons.rounded.Forward10
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -47,19 +48,20 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.media3.common.MediaItem
-import androidx.media3.common.PlaybackException
-import androidx.media3.common.Player
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.DefaultHttpDataSource
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import com.engineerfred.beststreamsug.mobile.ui.components.CastButton
+import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicBackground
+import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicMutedText
+import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicPrimary
 import kotlinx.coroutines.delay
 import java.util.concurrent.TimeUnit
 
@@ -75,58 +77,28 @@ fun PlayerRoute(
     poster: String?,
     onBack: () -> Unit,
 ) {
-    val context = LocalContext.current
-    var playbackError by remember(url) { mutableStateOf<String?>(null) }
+    val viewModel: PlayerViewModel = hiltViewModel()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
     var isControlsVisible by remember { mutableStateOf(true) }
 
-    val player = remember(url) {
-        ExoPlayer.Builder(context)
-            .setMediaSourceFactory(
-                DefaultMediaSourceFactory(
-                    DefaultHttpDataSource.Factory().setAllowCrossProtocolRedirects(true),
-                ),
-            )
-            .build()
-            .apply {
-                setMediaItem(MediaItem.fromUri(url))
-                prepare()
-                playWhenReady = true
-            }
-    }
-
-    var isPlaying by remember { mutableStateOf(true) }
     var positionMs by remember { mutableLongStateOf(0L) }
-    var durationMs by remember { mutableLongStateOf(0L) }
-    var isBuffering by remember { mutableStateOf(false) }
+    var castDurationMs by remember { mutableLongStateOf(0L) }
 
-    DisposableEffect(player) {
-        val listener = object : Player.Listener {
-            override fun onIsPlayingChanged(playing: Boolean) {
-                isPlaying = playing
+    LaunchedEffect(state.isCasting, state.isPlaying) {
+        while (true) {
+            if (state.isCasting) {
+                positionMs = viewModel.castManager.getCastPosition().coerceAtLeast(0L)
+                castDurationMs = viewModel.castManager.getCastDuration().coerceAtLeast(0L)
+            } else if (state.isPlaying) {
+                positionMs = viewModel.player.currentPosition.coerceAtLeast(0L)
             }
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                isBuffering = playbackState == Player.STATE_BUFFERING
-            }
-            override fun onPlayerError(error: PlaybackException) {
-                playbackError = "Playback failed. Please try again."
-            }
-        }
-        player.addListener(listener)
-        onDispose {
-            player.removeListener(listener)
-            player.release()
+            delay(500L)
         }
     }
 
-    LaunchedEffect(isPlaying, isControlsVisible) {
-        if (isPlaying) {
-            while (true) {
-                positionMs = player.currentPosition
-                durationMs = player.duration
-                delay(500L)
-            }
-        }
-    }
+    val effectiveDuration =
+        if (state.isCasting && castDurationMs > 0) castDurationMs else state.duration
 
     LaunchedEffect(isControlsVisible) {
         if (isControlsVisible) {
@@ -145,23 +117,30 @@ fun PlayerRoute(
                 }
             },
     ) {
-        AndroidView(
-            factory = { ctx ->
-                PlayerView(ctx).apply {
-                    this.player = player
-                    useController = false
-                    resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
-                    keepScreenOn = true
-                    layoutParams = ViewGroup.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                    )
-                }
-            },
-            modifier = Modifier.fillMaxSize(),
-        )
+        if (state.isCasting) {
+            CastingOverlay(
+                deviceName = state.castDeviceName,
+                title = state.currentTitle.ifBlank { title.orEmpty() },
+            )
+        } else {
+            AndroidView(
+                factory = { ctx ->
+                    PlayerView(ctx).apply {
+                        this.player = viewModel.player
+                        useController = false
+                        resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+                        keepScreenOn = true
+                        layoutParams = ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                        )
+                    }
+                },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
 
-        if (isBuffering) {
+        if (state.isBuffering) {
             CircularProgressIndicator(
                 modifier = Modifier
                     .align(Alignment.Center)
@@ -177,22 +156,20 @@ fun PlayerRoute(
             exit = fadeOut(),
         ) {
             PlayerControlsOverlay(
-                isPlaying = isPlaying,
+                isPlaying = state.isPlaying,
                 positionMs = positionMs,
-                durationMs = durationMs,
+                durationMs = effectiveDuration,
                 title = title,
                 meta = meta,
                 onBack = onBack,
-                onPlayPause = {
-                    if (player.isPlaying) player.pause() else player.play()
-                },
+                onPlayPause = viewModel::togglePlayPause,
                 onSeekBy = { deltaMs ->
-                    player.seekTo((player.currentPosition + deltaMs).coerceIn(0L, player.duration))
+                    if (deltaMs < 0) viewModel.seekBackward() else viewModel.seekForward()
                 },
             )
         }
 
-        playbackError?.let { message ->
+        state.error?.let { message ->
             Column(
                 modifier = Modifier
                     .align(Alignment.Center)
@@ -207,15 +184,56 @@ fun PlayerRoute(
                 )
                 PlayerErrorButton(
                     label = "Try Again",
-                    onClick = {
-                        player.seekTo(0L)
-                        player.playWhenReady = true
-                        playbackError = null
-                    },
+                    onClick = viewModel::retryPlayback,
                 )
                 PlayerErrorButton(
                     label = "Back",
                     onClick = onBack,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CastingOverlay(
+    deviceName: String?,
+    title: String,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(CinematicBackground),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(horizontal = 32.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.CastConnected,
+                contentDescription = "Casting",
+                tint = CinematicPrimary,
+                modifier = Modifier.size(56.dp),
+            )
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = "Casting to ${deviceName ?: "Android TV"}",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                ),
+            )
+            Spacer(Modifier.height(4.dp))
+            if (title.isNotBlank()) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = CinematicMutedText,
+                    ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
@@ -307,6 +325,7 @@ private fun PlayerControlsOverlay(
                     )
                 }
             }
+            CastButton(modifier = Modifier.padding(end = 4.dp))
         }
 
         // Center controls

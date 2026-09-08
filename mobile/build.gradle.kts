@@ -78,6 +78,10 @@ dependencies {
     implementation(libs.media3.ui)
     implementation(libs.media3.common)
 
+    // Google Cast & MediaRouter
+    implementation(libs.play.services.cast.framework)
+    implementation(libs.androidx.mediarouter)
+
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 
