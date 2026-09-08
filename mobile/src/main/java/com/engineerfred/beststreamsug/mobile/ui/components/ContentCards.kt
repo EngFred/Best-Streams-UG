@@ -30,7 +30,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.engineerfred.beststreamsug.domain.model.ContentSummary
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicBackground
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicPrimary
@@ -61,7 +60,7 @@ fun ContentPosterCard(
                 .aspectRatio(2f / 3f)
                 .clip(RoundedCornerShape(12.dp)),
         ) {
-            AsyncImage(
+            ShimmerImage(
                 model = (content.thumbnailUrl ?: content.landscapeUrl).toSafeHttpsUrl(),
                 contentDescription = content.title,
                 modifier = Modifier.fillMaxSize(),
@@ -106,7 +105,7 @@ fun ContentLandscapeCard(
                     onClick = onClick,
                 ),
         ) {
-            AsyncImage(
+            ShimmerImage(
                 model = (content.landscapeUrl ?: content.thumbnailUrl).toSafeHttpsUrl(),
                 contentDescription = content.title,
                 modifier = Modifier.fillMaxSize(),
@@ -175,7 +174,7 @@ fun ContentWideGridCard(
                 .aspectRatio(16f / 10f)
                 .clip(RoundedCornerShape(12.dp)),
         ) {
-            AsyncImage(
+            ShimmerImage(
                 model = (content.landscapeUrl ?: content.thumbnailUrl).toSafeHttpsUrl(),
                 contentDescription = content.title,
                 modifier = Modifier.fillMaxSize(),

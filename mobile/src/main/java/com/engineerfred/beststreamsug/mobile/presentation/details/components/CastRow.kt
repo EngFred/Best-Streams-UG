@@ -24,8 +24,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.engineerfred.beststreamsug.domain.model.CastMember
+import com.engineerfred.beststreamsug.mobile.ui.components.ShimmerImage
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicMutedText
 import com.engineerfred.beststreamsug.mobile.ui.util.toSafeHttpsUrl
 
@@ -55,7 +55,7 @@ fun CastRow(
                         .background(Color(0xFF1B1E24)),
                 ) {
                     member.imageUrl?.let { url ->
-                        AsyncImage(
+                        ShimmerImage(
                             model = url.toSafeHttpsUrl(),
                             contentDescription = member.name,
                             modifier = Modifier.fillMaxSize(),

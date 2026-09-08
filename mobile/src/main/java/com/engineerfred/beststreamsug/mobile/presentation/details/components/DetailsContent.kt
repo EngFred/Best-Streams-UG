@@ -37,9 +37,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.engineerfred.beststreamsug.domain.model.ContentDetails
 import com.engineerfred.beststreamsug.mobile.presentation.details.DetailsUiState
+import com.engineerfred.beststreamsug.mobile.ui.components.ShimmerImage
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicBackground
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicMutedText
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicPrimary
@@ -171,7 +171,7 @@ private fun DetailsHeader(
             .fillMaxWidth()
             .height(260.dp),
     ) {
-        AsyncImage(
+        ShimmerImage(
             model = (details.summary.landscapeUrl ?: details.summary.thumbnailUrl).toSafeHttpsUrl(),
             contentDescription = details.summary.title,
             modifier = Modifier.fillMaxWidth().height(260.dp),

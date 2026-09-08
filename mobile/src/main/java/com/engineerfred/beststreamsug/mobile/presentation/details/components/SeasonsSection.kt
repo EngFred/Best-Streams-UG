@@ -35,11 +35,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.engineerfred.beststreamsug.domain.model.ContentDetails
 import com.engineerfred.beststreamsug.domain.model.Episode
 import com.engineerfred.beststreamsug.mobile.presentation.details.DetailsUiState
 import com.engineerfred.beststreamsug.mobile.ui.components.ErrorState
+import com.engineerfred.beststreamsug.mobile.ui.components.ShimmerImage
 import com.engineerfred.beststreamsug.mobile.ui.components.shimmer.ShimmerBox
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicMutedText
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicPrimary
@@ -192,7 +192,7 @@ private fun EpisodeRow(
                 .background(Color(0xFF1B1E24)),
         ) {
             (episode.thumbnailUrl ?: episode.landscapeUrl)?.let { img ->
-                AsyncImage(
+                ShimmerImage(
                     model = img.toSafeHttpsUrl(),
                     contentDescription = episode.title,
                     modifier = Modifier.fillMaxSize(),

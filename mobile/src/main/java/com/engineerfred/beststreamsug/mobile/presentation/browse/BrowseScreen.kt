@@ -31,12 +31,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.AsyncImage
 import com.engineerfred.beststreamsug.domain.model.Category
 import com.engineerfred.beststreamsug.domain.model.Language
 import com.engineerfred.beststreamsug.mobile.presentation.browse.components.BrowseShimmerSkeleton
 import com.engineerfred.beststreamsug.mobile.ui.components.ErrorState
 import com.engineerfred.beststreamsug.mobile.ui.components.SectionHeader
+import com.engineerfred.beststreamsug.mobile.ui.components.ShimmerImage
 import com.engineerfred.beststreamsug.mobile.ui.util.toCategoryColor
 import com.engineerfred.beststreamsug.mobile.ui.util.toSafeHttpsUrl
 
@@ -182,7 +182,7 @@ private fun CategoryTile(
             ),
     ) {
         category.imageUrl?.let { url ->
-            AsyncImage(
+            ShimmerImage(
                 model = url.toSafeHttpsUrl(),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),

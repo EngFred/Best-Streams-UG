@@ -5,17 +5,10 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -34,6 +27,7 @@ import com.engineerfred.beststreamsug.mobile.presentation.navigation.asContentKi
 import com.engineerfred.beststreamsug.mobile.presentation.player.PlayerRoute
 import com.engineerfred.beststreamsug.mobile.presentation.search.SearchRoute
 import com.engineerfred.beststreamsug.mobile.presentation.series.SeriesRoute
+import com.engineerfred.beststreamsug.mobile.ui.components.CinematicBottomBar
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicBackground
 import com.engineerfred.beststreamsug.domain.model.ContentSummary
 
@@ -58,7 +52,7 @@ fun BestStreamsMobileApp(
         containerColor = CinematicBackground,
         bottomBar = {
             if (showBottomBar) {
-                BottomTabBar(
+                CinematicBottomBar(
                     currentTab = currentTab(currentDestination),
                     onTabSelected = { tab -> navigateToTab(navController, tab) },
                 )
@@ -93,7 +87,7 @@ fun BestStreamsMobileApp(
                         )
                     },
                     onBrowseSelected = { navigateToTab(navController, MobileTab.Browse) },
-                    onSearchSelected = { navController.navigate(MobileDestination.Search.route) },
+                    onSearchSelected = { navigateToTab(navController, MobileTab.Search) },
                 )
             }
             composable(route = MobileDestination.Series.route) {
@@ -239,37 +233,5 @@ private fun navigateToTab(navController: NavHostController, tab: MobileTab) {
         }
         launchSingleTop = true
         restoreState = true
-    }
-}
-
-@Composable
-private fun BottomTabBar(
-    currentTab: MobileTab?,
-    onTabSelected: (MobileTab) -> Unit,
-) {
-    NavigationBar(
-        containerColor = MaterialTheme.colorScheme.surface,
-        tonalElevation = 0.dp,
-    ) {
-        MobileTab.entries.forEach { tab ->
-            NavigationBarItem(
-                selected = currentTab == tab,
-                onClick = { onTabSelected(tab) },
-                icon = {
-                    androidx.compose.material3.Icon(
-                        imageVector = tab.icon,
-                        contentDescription = tab.label,
-                    )
-                },
-                label = { Text(text = tab.label) },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = MaterialTheme.colorScheme.primary,
-                    selectedTextColor = MaterialTheme.colorScheme.primary,
-                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    indicatorColor = Color.Transparent,
-                ),
-            )
-        }
     }
 }

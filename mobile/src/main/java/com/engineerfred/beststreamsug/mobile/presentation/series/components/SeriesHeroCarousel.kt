@@ -37,9 +37,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.engineerfred.beststreamsug.domain.model.Banner
 import com.engineerfred.beststreamsug.domain.model.ContentSummary
+import com.engineerfred.beststreamsug.mobile.ui.components.ShimmerImage
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicBackground
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicPrimary
 import com.engineerfred.beststreamsug.mobile.ui.util.toSafeHttpsUrl
@@ -117,7 +117,7 @@ private fun SeriesHeroSlide(
                 onClick = onClick,
             ),
     ) {
-        AsyncImage(
+        ShimmerImage(
             model = (banner.content.landscapeUrl ?: banner.content.thumbnailUrl).toSafeHttpsUrl(),
             contentDescription = banner.content.title,
             modifier = Modifier.fillMaxSize(),
