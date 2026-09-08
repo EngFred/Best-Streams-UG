@@ -33,4 +33,28 @@ class ContentMappersTest {
         assertNull(ContentDto(id = null, typeId = 1, name = "Missing ID").toDomain())
         assertNull(ContentDto(id = 1, typeId = 1, name = " ").toDomain())
     }
+
+    @Test
+    fun resolvesVjNameFromSingleLanguageId() {
+        val lookup = mapOf(7 to "VJ Ice P", 9 to "VJ Emmy")
+        assertEquals("VJ Ice P", "7".resolveVjName { lookup[it] })
+        assertEquals("VJ Emmy", "9".resolveVjName { lookup[it] })
+    }
+
+    @Test
+    fun resolvesVjNameFromCommaSeparatedLanguageIds() {
+        val lookup = mapOf(6 to "VJ Zulu", 7 to "VJ Ice P")
+        assertEquals("VJ Zulu", "6,7".resolveVjName { lookup[it] })
+        assertEquals("VJ Zulu", " 6 , 7 ".resolveVjName { lookup[it] })
+    }
+
+    @Test
+    fun returnsNullWhenLanguageIdIsBlankInvalidOrUnmapped() {
+        val lookup = mapOf(7 to "VJ Ice P")
+        assertNull("".resolveVjName { lookup[it] })
+        assertNull(null.resolveVjName { lookup[it] })
+        assertNull("abc".resolveVjName { lookup[it] })
+        assertNull("99".resolveVjName { lookup[it] })
+        assertNull("".resolveVjName { lookup[it] })
+    }
 }

@@ -23,7 +23,7 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Best Streams UG"
-include(":app")
+include(":tv")
 include(":core")
 include(":domain")
 include(":data")

@@ -6,6 +6,14 @@ import com.engineerfred.beststreamsug.domain.model.ContentSummary
 import com.engineerfred.beststreamsug.data.remote.dto.SectionDto
 import com.engineerfred.beststreamsug.domain.model.ContentSection
 
+fun String?.resolveVjName(lookup: (Int) -> String?): String? {
+    if (isNullOrBlank()) return null
+    return split(',')
+        .mapNotNull { it.trim().toIntOrNull() }
+        .mapNotNull { lookup(it) }
+        .firstOrNull()
+}
+
 fun ContentDto.toDomain(overriddenVjName: String? = null): ContentSummary? {
     val contentId = id ?: return null
     val contentTitle = name?.takeIf { it.isNotBlank() } ?: return null
@@ -40,7 +48,7 @@ fun SectionDto.toDomain(vjLookup: (Int) -> String? = { null }): ContentSection? 
         .firstOrNull { it.isNotBlank() }
         ?: return null
     val sectionItems = data.orEmpty().mapNotNull { 
-        val resolvedVjName = it.languageId?.toIntOrNull()?.let { id -> vjLookup(id) }
+        val resolvedVjName = it.languageId.resolveVjName(vjLookup)
         it.toDomain(resolvedVjName) 
     }
     return ContentSection(

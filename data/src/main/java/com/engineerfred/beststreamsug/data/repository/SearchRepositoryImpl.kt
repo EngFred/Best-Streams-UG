@@ -3,6 +3,7 @@ package com.engineerfred.beststreamsug.data.repository
 import com.engineerfred.beststreamsug.core.common.AppResult
 import com.engineerfred.beststreamsug.core.common.Page
 import com.engineerfred.beststreamsug.data.mapper.toDomain
+import com.engineerfred.beststreamsug.data.mapper.resolveVjName
 import com.engineerfred.beststreamsug.data.remote.datasource.SearchRemoteDataSource
 import com.engineerfred.beststreamsug.domain.model.ContentSummary
 import com.engineerfred.beststreamsug.domain.repository.SearchRepository
@@ -27,8 +28,7 @@ class SearchRepositoryImpl @Inject constructor(
             is AppResult.Success -> AppResult.Success(
                 Page(
                     items = result.data.items.mapNotNull { 
-                        val vjName = it.languageId?.toIntOrNull()?.let { id -> languageMap[id]?.name }
-                        it.toDomain(vjName) 
+                        it.toDomain(it.languageId.resolveVjName { id -> languageMap[id]?.name }) 
                     },
                     currentPage = result.data.currentPage,
                     totalPages = result.data.totalPages,

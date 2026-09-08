@@ -23,8 +23,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -33,8 +31,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import com.engineerfred.beststreamsug.mobile.ui.components.shimmer.ShimmerBox
-import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicSurface
-import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicMutedText
 
 @Composable
 fun DetailsShimmerSkeleton(
@@ -91,24 +87,25 @@ fun DetailsShimmerSkeleton(
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    ShimmerBox(
-                        modifier = Modifier
-                            .height(24.dp)
-                            .width(70.dp),
-                        shape = RoundedCornerShape(6.dp),
-                    )
-                    ShimmerBox(
-                        modifier = Modifier
-                            .height(24.dp)
-                            .width(70.dp),
-                        shape = RoundedCornerShape(6.dp),
-                    )
+                    repeat(3) {
+                        ShimmerBox(
+                            modifier = Modifier
+                                .height(24.dp)
+                                .width(70.dp),
+                            shape = RoundedCornerShape(6.dp),
+                        )
+                    }
                 }
                 ShimmerBox(
                     modifier = Modifier
-                        .height(40.dp)
-                        .width(140.dp),
-                    shape = RoundedCornerShape(22.dp),
+                        .height(14.dp)
+                        .fillMaxWidth(0.5f),
+                )
+                ShimmerBox(
+                    modifier = Modifier
+                        .height(52.dp)
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(28.dp),
                 )
                 ShimmerBox(
                     modifier = Modifier
@@ -139,11 +136,13 @@ fun DetailsShimmerSkeleton(
                     ) {
                         repeat(5) {
                             item {
-                                Column(modifier = Modifier.width(120.dp)) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(120.dp)
+                                        .height(180.dp),
+                                ) {
                                     ShimmerBox(
-                                        modifier = Modifier
-                                            .height(180.dp)
-                                            .width(120.dp),
+                                        modifier = Modifier.fillMaxSize(),
                                         shape = RoundedCornerShape(12.dp),
                                     )
                                 }

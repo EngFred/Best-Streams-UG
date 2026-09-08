@@ -2,6 +2,7 @@ package com.engineerfred.beststreamsug.data.repository
 
 import com.engineerfred.beststreamsug.core.common.AppResult
 import com.engineerfred.beststreamsug.data.mapper.toBanner
+import com.engineerfred.beststreamsug.data.mapper.resolveVjName
 import com.engineerfred.beststreamsug.data.remote.datasource.BannerRemoteDataSource
 import com.engineerfred.beststreamsug.domain.model.Banner
 import com.engineerfred.beststreamsug.domain.repository.BannerRepository
@@ -18,8 +19,7 @@ class BannerRepositoryImpl @Inject constructor(
 
         return when (val result = remoteDataSource.getBanners(isHomeScreen, typeId)) {
             is AppResult.Success -> AppResult.Success(result.data.mapNotNull { 
-                val vjName = it.languageId?.toIntOrNull()?.let { id -> languageMap[id]?.name }
-                it.toBanner(vjName) 
+                it.toBanner(it.languageId.resolveVjName { id -> languageMap[id]?.name }) 
             })
             is AppResult.Failure -> AppResult.Failure(result.error)
         }

@@ -3,6 +3,7 @@ package com.engineerfred.beststreamsug.data.repository
 import com.engineerfred.beststreamsug.core.common.AppResult
 import com.engineerfred.beststreamsug.core.common.Page
 import com.engineerfred.beststreamsug.data.mapper.toDomain
+import com.engineerfred.beststreamsug.data.mapper.resolveVjName
 import com.engineerfred.beststreamsug.data.remote.datasource.BrowseRemoteDataSource
 import com.engineerfred.beststreamsug.domain.model.BrowseSort
 import com.engineerfred.beststreamsug.domain.model.ContentSummary
@@ -25,8 +26,7 @@ class BrowseRepositoryImpl @Inject constructor(
         return remoteDataSource
             .getContentByCategory(categoryId, pageNumber, sort)
             .mapPageItems { 
-                val vjName = it.languageId?.toIntOrNull()?.let { id -> languageMap[id]?.name }
-                it.toDomain(vjName) 
+                it.toDomain(it.languageId.resolveVjName { id -> languageMap[id]?.name }) 
             }
     }
 
@@ -41,8 +41,7 @@ class BrowseRepositoryImpl @Inject constructor(
         return remoteDataSource
             .getContentByLanguage(languageId, pageNumber, sort)
             .mapPageItems { 
-                val vjName = it.languageId?.toIntOrNull()?.let { id -> languageMap[id]?.name }
-                it.toDomain(vjName) 
+                it.toDomain(it.languageId.resolveVjName { id -> languageMap[id]?.name }) 
             }
     }
 }
