@@ -10,6 +10,7 @@ import com.engineerfred.beststreamsug.domain.usecase.GetSeriesCoreContentUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,6 +21,7 @@ data class SeriesUiState(
     val isLoading: Boolean = true,
     val content: SeriesHomeContent? = null,
     val isCategoryRailsLoading: Boolean = false,
+    val totalCategoryCount: Int = 0,
     val error: AppError? = null,
 )
 
@@ -49,18 +51,24 @@ class SeriesViewModel @Inject constructor(
                     isLoading = false,
                     content = content,
                     isCategoryRailsLoading = true,
+                    totalCategoryCount = getSeriesCategoryRails.categoryDefinitions.size,
                 )
                 launch {
-                    getSeriesCategoryRails.categoryDefinitions.forEach { (id, name) ->
-                        launch {
-                            val rail = getSeriesCategoryRails.loadRail(id, name)
-                            _uiState.update { current ->
-                                current.copy(
-                                    content = current.content?.copy(
-                                        categoryRails = current.content.categoryRails
-                                            .filterNot { it.categoryId == rail.categoryId } + rail,
-                                    ),
-                                )
+                    val definitions = getSeriesCategoryRails.categoryDefinitions
+                    coroutineScope {
+                        definitions.forEach { (id, name) ->
+                            launch {
+                                val rail = getSeriesCategoryRails.loadRail(id, name)
+                                _uiState.update { current ->
+                                    val currentRails = current.content?.categoryRails.orEmpty()
+                                    val updatedRails = (currentRails.filterNot { it.categoryId == rail.categoryId } + rail)
+                                        .sortedBy { r -> definitions.indexOfFirst { it.first == r.categoryId } }
+                                    current.copy(
+                                        content = current.content?.copy(
+                                            categoryRails = updatedRails,
+                                        ),
+                                    )
+                                }
                             }
                         }
                     }

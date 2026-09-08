@@ -195,33 +195,35 @@ private fun CatalogHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(CinematicSurface)
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
-            .navigationBarsPadding()
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         val interactionSource = remember { MutableInteractionSource() }
-        Icon(
-            imageVector = Icons.Rounded.ArrowBack,
-            contentDescription = "Back",
-            tint = MaterialTheme.colorScheme.onSurface,
+        Box(
             modifier = Modifier
-                .width(48.dp)
-                .height(48.dp)
+                .size(40.dp)
                 .background(Color(0xFF1B1E24), CircleShape)
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,
                     onClick = onBack,
-                )
-                .padding(12.dp),
-        )
-        Spacer(modifier = Modifier.width(8.dp))
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.ArrowBack,
+                contentDescription = "Back",
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(22.dp),
+            )
+        }
+        Spacer(modifier = Modifier.width(14.dp))
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

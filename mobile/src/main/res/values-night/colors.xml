@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Brand / Theme colors -->
     <color name="brand_primary">#FFB74D</color>
@@ -9,12 +10,12 @@
     <color name="ic_launcher_background">#5B21B6</color>
     <color name="cast_button_tint">#FFFFFFFF</color>
 
-    <!-- Cast Dialog Colors (Strictly Dark Cinematic Theme) -->
+    <!-- Cast Dialog Colors (Dark Theme) -->
     <color name="cast_dialog_background">#14161A</color>
     <color name="cast_dialog_surface">#1B1E24</color>
     <color name="cast_dialog_text">#F5F1EA</color>
     <color name="cast_dialog_text_secondary">#B8B2A9</color>
-    <color name="cast_dialog_icon_tint">#FFFFFFFF</color>
+    <color name="cast_dialog_icon_tint">#F5F1EA</color>
     <color name="cast_dialog_divider">#2A2D33</color>
     <color name="cast_dialog_progress_indicator">#FFB74D</color>
     <color name="cast_dialog_progress_track">#2B2F37</color>

@@ -1,21 +1,54 @@
 <resources>
-    <style name="Theme.BestStreamsUG" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.BestStreamsUG" parent="Theme.Material3.Dark.NoActionBar">
         <item name="android:windowBackground">@color/app_background</item>
         <item name="android:colorBackground">@color/app_background</item>
-        <item name="android:colorBackgroundFloating">@color/app_background</item>
-        <item name="android:colorAccent">@color/brand_violet</item>
-        <item name="colorPrimary">@color/brand_violet</item>
-        <item name="colorPrimaryDark">@color/brand_violet_deep</item>
-        <item name="colorAccent">@color/brand_violet</item>
+        <item name="android:colorBackgroundFloating">@color/cast_dialog_background</item>
+        <item name="colorPrimary">@color/brand_primary</item>
+        <item name="colorPrimaryDark">@color/brand_primary_variant</item>
+        <item name="colorAccent">@color/brand_primary</item>
+        <item name="android:colorAccent">@color/brand_primary</item>
+        <item name="colorControlActivated">@color/brand_primary</item>
+        <item name="android:colorControlActivated">@color/brand_primary</item>
         <item name="mediaRouteTheme">@style/Theme.BestStreamsUG.MediaRouter</item>
+        <item name="mediaRouteButtonTint">@color/cast_button_tint</item>
     </style>
 
-    <style name="Theme.BestStreamsUG.MediaRouter">
+    <style name="Theme.BestStreamsUG.MediaRouter" parent="Theme.MediaRouter">
         <item name="mediaRouteButtonTint">@color/cast_button_tint</item>
-        <item name="colorPrimary">@color/brand_violet</item>
-        <item name="colorAccent">@color/brand_violet</item>
-        <item name="colorControlActivated">@color/brand_violet</item>
-        <item name="android:colorControlActivated">@color/brand_violet</item>
+
+        <!-- Brand Primary & Accent colors (LinearProgressIndicator, volume bar, active item) -->
+        <item name="colorPrimary">@color/brand_primary</item>
+        <item name="colorPrimaryDark">@color/brand_primary_variant</item>
+        <item name="colorAccent">@color/brand_primary</item>
+        <item name="android:colorAccent">@color/brand_primary</item>
+        <item name="colorControlActivated">@color/brand_primary</item>
+        <item name="android:colorControlActivated">@color/brand_primary</item>
+        <item name="colorSecondary">@color/brand_primary</item>
+
+        <!-- Progress Indicator Colors -->
+        <item name="android:indeterminateTint">@color/cast_dialog_progress_indicator</item>
+        <item name="android:progressTint">@color/cast_dialog_progress_indicator</item>
+
+        <!-- Dialog Backgrounds & Surfaces (Strictly Dark) -->
+        <item name="android:windowBackground">@color/cast_dialog_background</item>
+        <item name="android:colorBackground">@color/cast_dialog_background</item>
+        <item name="android:colorBackgroundFloating">@color/cast_dialog_background</item>
+        <item name="colorSurface">@color/cast_dialog_background</item>
+        <item name="colorSurfaceContainer">@color/cast_dialog_surface</item>
+        <item name="colorSurfaceContainerHigh">@color/cast_dialog_surface</item>
+        <item name="colorSurfaceVariant">@color/cast_dialog_surface</item>
+        <item name="colorOutline">@color/cast_dialog_divider</item>
+        <item name="colorOutlineVariant">@color/cast_dialog_divider</item>
+
+        <!-- Text Colors (Strictly Light on Dark) -->
+        <item name="android:textColorPrimary">@color/cast_dialog_text</item>
+        <item name="android:textColorSecondary">@color/cast_dialog_text_secondary</item>
+        <item name="colorOnSurface">@color/cast_dialog_text</item>
+        <item name="colorOnSurfaceVariant">@color/cast_dialog_text_secondary</item>
+
+        <!-- Icon Tint & Controls (Strictly White) -->
+        <item name="colorControlNormal">@color/cast_button_tint</item>
+        <item name="android:colorControlNormal">@color/cast_button_tint</item>
     </style>
 
     <style name="Theme.BestStreamsUG.Splash" parent="Theme.SplashScreen">

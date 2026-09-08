@@ -285,35 +285,41 @@ private fun PlayerControlsOverlay(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             val interactionSource = remember { MutableInteractionSource() }
-            Icon(
-                imageVector = Icons.Rounded.ArrowBack,
-                contentDescription = "Back",
-                tint = Color.White,
+            Box(
                 modifier = Modifier
-                    .size(48.dp)
-                    .background(Color.Black.copy(alpha = 0.4f), CircleShape)
+                    .size(40.dp)
+                    .background(Color.Black.copy(alpha = 0.5f), CircleShape)
                     .clickable(
                         interactionSource = interactionSource,
                         indication = null,
                         onClick = onBack,
-                    )
-                    .padding(12.dp),
-            )
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(start = 8.dp),
+                    .padding(horizontal = 14.dp),
             ) {
                 title?.let {
                     Text(
                         text = it,
                         style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
                         color = Color.White,
                         maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
                 meta?.let {
@@ -322,10 +328,11 @@ private fun PlayerControlsOverlay(
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.White.copy(alpha = 0.7f),
                         maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
-            CastButton(modifier = Modifier.padding(end = 4.dp))
+            CastButton(modifier = Modifier.size(36.dp))
         }
 
         // Center controls

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -74,12 +75,6 @@ private fun SeriesScreen(
                     )
                 }
 
-                if (state.isCategoryRailsLoading) {
-                    item {
-                        SeriesCategoryRailsLoadingBlock()
-                    }
-                }
-
                 items(
                     items = categoryRails,
                     key = { "series_rail_${it.categoryId}" },
@@ -89,6 +84,16 @@ private fun SeriesScreen(
                         onContentSelected = onContentSelected,
                         onOpenCategory = onOpenCategory,
                     )
+                }
+
+                if (state.isCategoryRailsLoading) {
+                    val loadedCount = categoryRails.size
+                    val remainingShimmers = (state.totalCategoryCount - loadedCount).coerceAtLeast(1)
+                    repeat(remainingShimmers) {
+                        item(key = "shimmer_rail_$it") {
+                            SeriesCategoryRailsLoadingBlock()
+                        }
+                    }
                 }
             }
         }
@@ -105,17 +110,20 @@ private fun SeriesScreen(
 
 @Composable
 private fun SeriesCategoryRailsLoadingBlock() {
-    Column(modifier = Modifier.padding(vertical = 8.dp)) {
-        Spacer(modifier = Modifier.height(14.dp))
+    Column(modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)) {
         Column(modifier = Modifier.padding(horizontal = 20.dp)) {
             ShimmerBox(
-                modifier = Modifier.height(16.dp),
+                modifier = Modifier
+                    .height(18.dp)
+                    .width(160.dp),
+                shape = RoundedCornerShape(4.dp),
             )
         }
         Spacer(modifier = Modifier.height(10.dp))
         LazyRow(
             contentPadding = PaddingValues(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
+            userScrollEnabled = false,
         ) {
             repeat(5) {
                 item {
@@ -123,6 +131,7 @@ private fun SeriesCategoryRailsLoadingBlock() {
                         modifier = Modifier
                             .height(180.dp)
                             .width(120.dp),
+                        shape = RoundedCornerShape(12.dp),
                     )
                 }
             }
