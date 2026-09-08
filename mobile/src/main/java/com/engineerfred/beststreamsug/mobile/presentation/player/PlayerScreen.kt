@@ -258,9 +258,15 @@ fun PlayerRoute(
     val effectiveDuration =
         if (state.isCasting && castDurationMs > 0) castDurationMs else state.duration
 
-    // ── Auto hide controls ───────────────────────────────────────────────────
-    LaunchedEffect(isControlsVisible) {
-        if (isControlsVisible) {
+    var lastInteractionTrigger by remember { mutableLongStateOf(0L) }
+    val showOrResetControls = {
+        isControlsVisible = true
+        lastInteractionTrigger = System.currentTimeMillis()
+    }
+
+    // ── Auto hide controls: auto-hides after 4s only when playing; pauses timer when paused ──
+    LaunchedEffect(isControlsVisible, lastInteractionTrigger, state.isPlaying) {
+        if (isControlsVisible && state.isPlaying) {
             delay(AUTO_HIDE_MS)
             isControlsVisible = false
         }
@@ -385,8 +391,14 @@ fun PlayerRoute(
                         val change = event.changes.firstOrNull { it.id == down.id } ?: break
 
                         if (!change.pressed) {
-                            // Finger lifted — treat as tap if no drag occurred
-                            if (!isDragging) isControlsVisible = !isControlsVisible
+                            // Finger lifted — treat as tap if no drag occurred and tap wasn't consumed by controls
+                            if (!isDragging && !change.isConsumed) {
+                                if (isControlsVisible) {
+                                    isControlsVisible = false
+                                } else {
+                                    showOrResetControls()
+                                }
+                            }
                             break
                         }
 
@@ -534,14 +546,30 @@ fun PlayerRoute(
                 title = title,
                 meta = meta,
                 onBack = handleBack,
-                onToggleOrientation = handleToggleOrientation,
-                onCycleScaleMode = handleCycleScaleMode,
-                onPlayPause = viewModel::togglePlayPause,
+                onToggleOrientation = {
+                    showOrResetControls()
+                    handleToggleOrientation()
+                },
+                onCycleScaleMode = {
+                    showOrResetControls()
+                    handleCycleScaleMode()
+                },
+                onPlayPause = {
+                    showOrResetControls()
+                    viewModel.togglePlayPause()
+                },
                 onSeekBy = { deltaMs ->
+                    showOrResetControls()
                     if (deltaMs < 0) viewModel.seekBackward() else viewModel.seekForward()
                 },
-                onSeekTo = viewModel::seekTo,
+                onSeekTo = { targetMs ->
+                    showOrResetControls()
+                    viewModel.seekTo(targetMs)
+                },
                 onEnterPip = enterPip,
+                onBackgroundTap = {
+                    isControlsVisible = false
+                },
             )
         }
 
@@ -636,8 +664,17 @@ private fun PlayerControlsOverlay(
     onSeekBy: (Long) -> Unit,
     onSeekTo: (Long) -> Unit,
     onEnterPip: () -> Unit,
+    onBackgroundTap: () -> Unit,
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onBackgroundTap,
+            ),
+    ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()

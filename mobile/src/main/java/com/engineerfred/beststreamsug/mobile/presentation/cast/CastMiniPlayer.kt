@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -35,12 +36,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.engineerfred.beststreamsug.mobile.core.cast.CastManager
+import com.engineerfred.beststreamsug.mobile.ui.components.ShimmerImage
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicMutedText
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicPrimary
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicSurface
@@ -54,6 +59,8 @@ import dagger.hilt.components.SingletonComponent
 data class CastMiniState(
     val streamUrl: String,
     val title: String,
+    val meta: String,
+    val posterUrl: String,
     val deviceName: String,
     val isPlaying: Boolean,
 )
@@ -69,26 +76,44 @@ fun CastMiniPlayer(
     val isPlaying by castManager.isCastPlaying.collectAsStateWithLifecycle()
     val deviceName by castManager.connectedDeviceName.collectAsStateWithLifecycle()
     val title by castManager.currentCastTitle.collectAsStateWithLifecycle()
+    val meta by castManager.currentCastMeta.collectAsStateWithLifecycle()
+    val posterUrl by castManager.currentCastPosterUrl.collectAsStateWithLifecycle()
     val streamUrl by castManager.currentCastStreamUrl.collectAsStateWithLifecycle()
 
     var current by remember {
         mutableStateOf(
-            if (isCasting) {
-                CastMiniState(streamUrl, title, deviceName ?: "Android TV", isPlaying)
+            if (isCasting && streamUrl.isNotBlank()) {
+                CastMiniState(
+                    streamUrl = streamUrl,
+                    title = title,
+                    meta = meta,
+                    posterUrl = posterUrl,
+                    deviceName = deviceName ?: "Android TV",
+                    isPlaying = isPlaying
+                )
             } else {
                 null
             },
         )
     }
 
-    LaunchedEffect(isCasting, streamUrl, title, deviceName, isPlaying) {
-        if (isCasting) {
-            current = CastMiniState(streamUrl, title, deviceName ?: "Android TV", isPlaying)
+    LaunchedEffect(isCasting, streamUrl, title, meta, posterUrl, deviceName, isPlaying) {
+        current = if (isCasting && streamUrl.isNotBlank()) {
+            CastMiniState(
+                streamUrl = streamUrl,
+                title = title,
+                meta = meta,
+                posterUrl = posterUrl,
+                deviceName = deviceName ?: "Android TV",
+                isPlaying = isPlaying
+            )
+        } else {
+            null
         }
     }
 
     AnimatedVisibility(
-        visible = isCasting && current != null,
+        visible = isCasting && current != null && !current?.streamUrl.isNullOrBlank(),
         modifier = modifier,
         enter = slideInVertically(animationSpec = tween(300)) { it } + fadeIn(),
         exit = slideOutVertically(animationSpec = tween(300)) { it } + fadeOut(),
@@ -109,6 +134,14 @@ private fun CastMiniBar(
     castManager: CastManager,
     onOpenPlayer: (CastMiniState) -> Unit,
 ) {
+    val displayTitle = remember(state.title, state.meta) {
+        if (state.meta.isNotBlank() && !state.title.contains(" - ") && !state.title.contains(state.meta, ignoreCase = true)) {
+            "${state.title} - ${state.meta}"
+        } else {
+            state.title.ifBlank { "Now Casting" }
+        }
+    }
+
     Column(modifier = Modifier.fillMaxWidth().background(CinematicSurface)) {
         Box(
             modifier = Modifier
@@ -127,28 +160,42 @@ private fun CastMiniBar(
                 .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // Poster thumbnail or cast icon
             Box(
                 modifier = Modifier
-                    .size(40.dp)
-                    .background(CinematicSurfaceVariant, RoundedCornerShape(10.dp)),
+                    .size(width = 54.dp, height = 38.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(CinematicSurfaceVariant),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    imageVector = Icons.Rounded.CastConnected,
-                    contentDescription = null,
-                    tint = CinematicPrimary,
-                    modifier = Modifier.size(22.dp),
-                )
+                if (state.posterUrl.isNotBlank()) {
+                    ShimmerImage(
+                        model = state.posterUrl,
+                        contentDescription = displayTitle,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Rounded.CastConnected,
+                        contentDescription = null,
+                        tint = CinematicPrimary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
             }
+
             Spacer(modifier = Modifier.width(12.dp))
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = state.title.ifBlank { "Now Casting" },
-                    style = MaterialTheme.typography.labelLarge,
+                    text = displayTitle,
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
                     color = CinematicText,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = "Casting to ${state.deviceName}",
                     style = MaterialTheme.typography.labelSmall,
@@ -157,7 +204,9 @@ private fun CastMiniBar(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+
             Spacer(modifier = Modifier.width(8.dp))
+
             IconButton(
                 onClick = {
                     if (state.isPlaying) castManager.pause() else castManager.play()

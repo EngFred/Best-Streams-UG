@@ -47,6 +47,12 @@ class CastManager @Inject constructor(
     private val _currentCastTitle = MutableStateFlow("")
     val currentCastTitle: StateFlow<String> = _currentCastTitle.asStateFlow()
 
+    private val _currentCastPosterUrl = MutableStateFlow("")
+    val currentCastPosterUrl: StateFlow<String> = _currentCastPosterUrl.asStateFlow()
+
+    private val _currentCastMeta = MutableStateFlow("")
+    val currentCastMeta: StateFlow<String> = _currentCastMeta.asStateFlow()
+
     private var lastStreamUrl: String = ""
     private var lastTitle: String = ""
     private var lastPosterUrl: String = ""
@@ -66,6 +72,14 @@ class CastManager @Inject constructor(
             if (currentMedia != null && currentMedia.contentId.isNotBlank()) {
                 _currentCastStreamUrl.value = currentMedia.contentId
                 _currentCastTitle.value = currentMedia.metadata?.getString(MediaMetadata.KEY_TITLE).orEmpty()
+                val images = currentMedia.metadata?.images
+                if (!images.isNullOrEmpty()) {
+                    _currentCastPosterUrl.value = images[0].url.toString()
+                }
+                val subtitle = currentMedia.metadata?.getString(MediaMetadata.KEY_SUBTITLE).orEmpty()
+                if (subtitle.isNotBlank()) {
+                    _currentCastMeta.value = subtitle
+                }
             }
 
             if (isPlaying) {
@@ -82,6 +96,14 @@ class CastManager @Inject constructor(
             if (currentMedia != null && currentMedia.contentId.isNotBlank()) {
                 _currentCastStreamUrl.value = currentMedia.contentId
                 _currentCastTitle.value = currentMedia.metadata?.getString(MediaMetadata.KEY_TITLE).orEmpty()
+                val images = currentMedia.metadata?.images
+                if (!images.isNullOrEmpty()) {
+                    _currentCastPosterUrl.value = images[0].url.toString()
+                }
+                val subtitle = currentMedia.metadata?.getString(MediaMetadata.KEY_SUBTITLE).orEmpty()
+                if (subtitle.isNotBlank()) {
+                    _currentCastMeta.value = subtitle
+                }
             }
         }
 
@@ -145,6 +167,14 @@ class CastManager @Inject constructor(
         if (mediaInfo != null && mediaInfo.contentId.isNotBlank()) {
             _currentCastStreamUrl.value = mediaInfo.contentId
             _currentCastTitle.value = mediaInfo.metadata?.getString(MediaMetadata.KEY_TITLE).orEmpty()
+            val images = mediaInfo.metadata?.images
+            if (!images.isNullOrEmpty()) {
+                _currentCastPosterUrl.value = images[0].url.toString()
+            }
+            val subtitle = mediaInfo.metadata?.getString(MediaMetadata.KEY_SUBTITLE).orEmpty()
+            if (subtitle.isNotBlank()) {
+                _currentCastMeta.value = subtitle
+            }
         }
         _isCastPlaying.value = client?.isPlaying == true
         _isCastBuffering.value = client?.playerState == MediaStatus.PLAYER_STATE_BUFFERING
@@ -159,6 +189,8 @@ class CastManager @Inject constructor(
         _isCastBuffering.value = false
         _currentCastStreamUrl.value = ""
         _currentCastTitle.value = ""
+        _currentCastPosterUrl.value = ""
+        _currentCastMeta.value = ""
         _castError.value = null
     }
 
@@ -203,6 +235,8 @@ class CastManager @Inject constructor(
 
         _currentCastStreamUrl.value = streamUrl
         _currentCastTitle.value = title
+        _currentCastPosterUrl.value = posterUrl
+        _currentCastMeta.value = overview
         _isCastBuffering.value = true
         _castError.value = null
 

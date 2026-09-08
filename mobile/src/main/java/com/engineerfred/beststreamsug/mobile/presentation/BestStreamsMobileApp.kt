@@ -82,6 +82,8 @@ fun BestStreamsMobileApp(
                                     MobileDestination.Player.createRoute(
                                         url = state.streamUrl,
                                         title = state.title,
+                                        meta = state.meta,
+                                        poster = state.posterUrl,
                                     ),
                                 )
                             },
