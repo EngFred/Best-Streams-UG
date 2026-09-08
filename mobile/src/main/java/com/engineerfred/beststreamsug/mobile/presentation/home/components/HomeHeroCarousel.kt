@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -35,13 +34,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.engineerfred.beststreamsug.domain.model.Banner
-import com.engineerfred.beststreamsug.domain.model.ContentKind
 import com.engineerfred.beststreamsug.domain.model.ContentSummary
 import com.engineerfred.beststreamsug.mobile.ui.components.CastButton
 import com.engineerfred.beststreamsug.mobile.ui.components.ShimmerImage
@@ -150,7 +146,7 @@ private fun HeroSlide(
                 .background(
                     Brush.verticalGradient(
                         0.35f to Color.Transparent,
-                        0.72f to Color.Transparent,
+                        0.68f to Color.Transparent,
                         1f to CinematicBackground,
                     ),
                 ),
@@ -160,21 +156,10 @@ private fun HeroSlide(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(horizontal = 20.dp)
-                .padding(top = 18.dp, bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+                .padding(bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                banner.categoryNames.take(2).forEach { name ->
-                    Text(
-                        text = name,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color.White.copy(alpha = 0.85f),
-                    )
-                }
-            }
+            // Title
             Text(
                 text = banner.content.title,
                 style = MaterialTheme.typography.headlineSmall,
@@ -182,8 +167,42 @@ private fun HeroSlide(
                 color = Color.White,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth(0.9f),
+                modifier = Modifier.fillMaxWidth(0.92f),
             )
+
+            // VJ Tag & Genres below the title (e.g. VJ Junior • Action • Drama • Sci-Fi)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                banner.content.vjName?.takeIf { it.isNotBlank() }?.let { vj ->
+                    val vjDisplay = if (vj.startsWith("VJ", ignoreCase = true)) vj else "VJ $vj"
+                    Text(
+                        text = vjDisplay,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = CinematicBackground,
+                        modifier = Modifier
+                            .background(CinematicPrimary, RoundedCornerShape(4.dp))
+                            .padding(horizontal = 7.dp, vertical = 2.5.dp),
+                    )
+                }
+
+                val genresText = banner.categoryNames.filter { it.isNotBlank() }.joinToString(" • ")
+                if (genresText.isNotBlank()) {
+                    Text(
+                        text = genresText,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White.copy(alpha = 0.85f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(2.dp))
+
+            // Action buttons
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -143,7 +144,7 @@ private fun SeriesHeroSlide(
                 .background(
                     Brush.verticalGradient(
                         0.35f to Color.Transparent,
-                        0.72f to Color.Transparent,
+                        0.68f to Color.Transparent,
                         1f to CinematicBackground,
                     ),
                 ),
@@ -152,9 +153,10 @@ private fun SeriesHeroSlide(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(horizontal = 20.dp)
-                .padding(top = 18.dp, bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+                .padding(bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            // Title
             Text(
                 text = banner.content.title,
                 style = MaterialTheme.typography.headlineSmall,
@@ -162,8 +164,42 @@ private fun SeriesHeroSlide(
                 color = Color.White,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth(0.9f),
+                modifier = Modifier.fillMaxWidth(0.92f),
             )
+
+            // VJ Tag & Genres below the title (e.g. VJ Junior • Action • Drama • Sci-Fi)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                banner.content.vjName?.takeIf { it.isNotBlank() }?.let { vj ->
+                    val vjDisplay = if (vj.startsWith("VJ", ignoreCase = true)) vj else "VJ $vj"
+                    Text(
+                        text = vjDisplay,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = CinematicBackground,
+                        modifier = Modifier
+                            .background(CinematicPrimary, RoundedCornerShape(4.dp))
+                            .padding(horizontal = 7.dp, vertical = 2.5.dp),
+                    )
+                }
+
+                val genresText = banner.categoryNames.filter { it.isNotBlank() }.joinToString(" • ")
+                if (genresText.isNotBlank()) {
+                    Text(
+                        text = genresText,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White.copy(alpha = 0.85f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(2.dp))
+
+            // Action buttons
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,

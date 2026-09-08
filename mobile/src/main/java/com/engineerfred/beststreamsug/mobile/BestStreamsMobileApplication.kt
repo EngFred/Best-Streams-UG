@@ -1,6 +1,7 @@
 package com.engineerfred.beststreamsug.mobile
 
 import android.app.Application
+import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
@@ -38,9 +39,10 @@ class BestStreamsMobileApplication : Application(), Configuration.Provider {
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
 
+        // 30-minute interval for timely new release detection
         val periodicWorkRequest = PeriodicWorkRequestBuilder<NewContentNotificationWorker>(
-            repeatInterval = 2,
-            repeatIntervalTimeUnit = TimeUnit.HOURS,
+            repeatInterval = 30,
+            repeatIntervalTimeUnit = TimeUnit.MINUTES,
         )
             .setConstraints(constraints)
             .build()
@@ -52,17 +54,19 @@ class BestStreamsMobileApplication : Application(), Configuration.Provider {
         val workManager = WorkManager.getInstance(this)
         workManager.enqueueUniquePeriodicWork(
             WORK_NAME,
-            ExistingPeriodicWorkPolicy.KEEP,
+            ExistingPeriodicWorkPolicy.UPDATE,
             periodicWorkRequest,
         )
         workManager.enqueueUniqueWork(
             INITIAL_WORK_NAME,
-            ExistingWorkPolicy.KEEP,
+            ExistingWorkPolicy.REPLACE,
             oneTimeWorkRequest,
         )
+        Log.i(TAG, "Enqueued 30-minute periodic worker and immediate one-time check")
     }
 
     companion object {
+        private const val TAG = "BestStreamsApp"
         private const val WORK_NAME = "BestStreamsNewContentWorker"
         private const val INITIAL_WORK_NAME = "BestStreamsInitialNewContentWorker"
     }

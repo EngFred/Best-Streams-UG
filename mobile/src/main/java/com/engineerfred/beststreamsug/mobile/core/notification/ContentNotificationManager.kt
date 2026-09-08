@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.graphics.drawable.toBitmap
@@ -43,6 +44,7 @@ class ContentNotificationManager @Inject constructor(
             }
             val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(channel)
+            Log.d(TAG, "Notification channel created: $CHANNEL_ID")
         }
     }
 
@@ -55,6 +57,11 @@ class ContentNotificationManager @Inject constructor(
         overview: String?,
         posterUrl: String?,
     ) {
+        if (!notificationManager.areNotificationsEnabled()) {
+            Log.w(TAG, "Notifications are disabled in system settings. Cannot post notification for: $title")
+            return
+        }
+
         // Format title: "Title by VJ <Name>" (e.g. "Spider-Man by VJ Junior")
         val formattedTitle = if (!vjName.isNullOrBlank()) {
             val vjDisplay = if (vjName.startsWith("VJ", ignoreCase = true)) vjName else "VJ $vjName"
@@ -76,8 +83,11 @@ class ContentNotificationManager @Inject constructor(
             }
         }
 
+        Log.d(TAG, "Preparing notification: Title='$formattedTitle', Genres='$genresText', PosterUrl=$posterUrl")
+
         // Load poster bitmap via Coil
         val posterBitmap = posterUrl?.let { loadBitmap(it) }
+        Log.d(TAG, "Poster bitmap loaded: ${posterBitmap != null}")
 
         // PendingIntent to launch content details screen in MainActivity
         val intent = Intent(context, MainActivity::class.java).apply {
@@ -118,8 +128,9 @@ class ContentNotificationManager @Inject constructor(
 
         try {
             notificationManager.notify(contentId, builder.build())
-        } catch (_: SecurityException) {
-            // Permission not granted on Android 13+
+            Log.i(TAG, "Notification successfully posted to system for: '$formattedTitle' (ID: $contentId)")
+        } catch (e: SecurityException) {
+            Log.e(TAG, "SecurityException: POST_NOTIFICATIONS permission not granted", e)
         }
     }
 
@@ -136,12 +147,14 @@ class ContentNotificationManager @Inject constructor(
             } else {
                 null
             }
-        } catch (_: Throwable) {
+        } catch (e: Throwable) {
+            Log.w(TAG, "Failed to load poster bitmap for notification: ${e.message}")
             null
         }
     }
 
     companion object {
+        private const val TAG = "ContentNotification"
         const val CHANNEL_ID = "best_streams_new_releases"
         const val CHANNEL_NAME = "New Releases"
         const val EXTRA_CONTENT_ID = "extra_notification_content_id"

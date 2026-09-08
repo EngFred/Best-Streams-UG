@@ -1,6 +1,7 @@
 package com.engineerfred.beststreamsug.mobile.core.notification
 
 import android.content.Context
+import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -25,6 +26,7 @@ class NewContentNotificationWorker @AssistedInject constructor(
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result = coroutineScope {
+        Log.i(TAG, "=== NewContentNotificationWorker started ===")
         try {
             // Fetch movie and series sections concurrently
             val movieSectionsDeferred = async {
@@ -39,31 +41,43 @@ class NewContentNotificationWorker @AssistedInject constructor(
 
             val allItems = mutableListOf<ContentSummary>()
             if (movieSections is AppResult.Success) {
-                allItems.addAll(movieSections.data.flatMap { it.items })
+                val movieItems = movieSections.data.flatMap { it.items }
+                allItems.addAll(movieItems)
+                Log.d(TAG, "Fetched ${movieSections.data.size} movie sections with ${movieItems.size} items")
+            } else if (movieSections is AppResult.Failure) {
+                Log.w(TAG, "Failed to fetch movie sections: ${movieSections.error}")
             }
+
             if (seriesSections is AppResult.Success) {
-                allItems.addAll(seriesSections.data.flatMap { it.items })
+                val seriesItems = seriesSections.data.flatMap { it.items }
+                allItems.addAll(seriesItems)
+                Log.d(TAG, "Fetched ${seriesSections.data.size} series sections with ${seriesItems.size} items")
+            } else if (seriesSections is AppResult.Failure) {
+                Log.w(TAG, "Failed to fetch series sections: ${seriesSections.error}")
             }
 
             val uniqueItems = allItems.distinctBy { it.id }
+            Log.d(TAG, "Total unique items in catalog: ${uniqueItems.size}")
 
             val itemsToNotify: List<ContentSummary>
             if (!tracker.isInitialized()) {
-                // On first launch, notify the single latest release so user can verify, then index the rest
+                Log.i(TAG, "First-time worker initialization. Indexing catalog...")
                 val firstItem = uniqueItems.firstOrNull()
                 itemsToNotify = if (firstItem != null) listOf(firstItem) else emptyList()
                 tracker.markBatchAsNotified(uniqueItems.map { it.id })
                 tracker.setInitialized(true)
+                Log.i(TAG, "Indexed ${uniqueItems.size} items. Selected sample notification: ${firstItem?.title}")
             } else {
-                // On subsequent runs, identify genuinely new items
                 val newItems = uniqueItems.filter { !tracker.hasBeenNotified(it.id) }
                 itemsToNotify = newItems.take(MAX_NOTIFICATIONS_PER_RUN)
+                Log.i(TAG, "Detected ${newItems.size} genuinely new items. Preparing to notify ${itemsToNotify.size} items.")
                 if (newItems.size > itemsToNotify.size) {
                     tracker.markBatchAsNotified(newItems.map { it.id })
                 }
             }
 
             for (item in itemsToNotify) {
+                Log.d(TAG, "Fetching full details for notification: '${item.title}' (ID: ${item.id})")
                 val detailsResult = getContentDetailsUseCase(
                     contentId = item.id,
                     typeId = item.kind.apiTypeId(),
@@ -96,15 +110,19 @@ class NewContentNotificationWorker @AssistedInject constructor(
                 )
 
                 tracker.markAsNotified(item.id)
+                Log.i(TAG, "Successfully posted notification for '${item.title}'")
             }
 
+            Log.i(TAG, "=== NewContentNotificationWorker finished successfully ===")
             Result.success()
-        } catch (_: Throwable) {
+        } catch (e: Throwable) {
+            Log.e(TAG, "Error in NewContentNotificationWorker", e)
             Result.retry()
         }
     }
 
     private companion object {
+        const val TAG = "NewContentWorker"
         const val MAX_NOTIFICATIONS_PER_RUN = 3
     }
 }
