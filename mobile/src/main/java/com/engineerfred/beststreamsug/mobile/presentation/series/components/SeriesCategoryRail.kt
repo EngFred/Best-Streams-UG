@@ -70,6 +70,5 @@ private fun SeriesPosterCard(
     com.engineerfred.beststreamsug.mobile.ui.components.ContentPosterCard(
         content = content,
         onClick = onClick,
-        showTitle = true,
     )
 }

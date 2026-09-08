@@ -138,7 +138,6 @@ private fun CatalogScreen(
                                     content = item,
                                     onClick = { onContentSelected(item) },
                                     modifier = Modifier.fillMaxWidth(),
-                                    showTitle = false,
                                 )
                             } else {
                                 ContentWideGridCard(

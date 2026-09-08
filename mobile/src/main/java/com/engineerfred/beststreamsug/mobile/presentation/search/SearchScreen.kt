@@ -108,7 +108,6 @@ private fun SearchResultsGrid(
                 content = content,
                 onClick = { onContentSelected(content) },
                 modifier = Modifier.fillMaxWidth(),
-                showTitle = false,
             )
         }
     }

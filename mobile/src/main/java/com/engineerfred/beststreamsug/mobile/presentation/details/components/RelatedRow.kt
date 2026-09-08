@@ -31,7 +31,6 @@ fun RelatedRow(
                 content = item,
                 onClick = { onContentSelected(item) },
                 modifier = Modifier.width(110.dp),
-                showTitle = true,
             )
         }
     }

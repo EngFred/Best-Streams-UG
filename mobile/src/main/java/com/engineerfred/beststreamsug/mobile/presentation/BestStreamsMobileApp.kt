@@ -17,7 +17,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -46,7 +45,7 @@ fun BestStreamsMobileApp(
     val currentDestination = backStackEntry?.destination
 
     val showBottomBar = MobileTab.entries.any { tab ->
-        currentDestination?.hasRoute(tab.destination::class) == true
+        currentDestination?.route == tab.destination.route
     }
 
     val openDetails: (ContentSummary) -> Unit = { content ->
@@ -220,7 +219,7 @@ fun BestStreamsMobileApp(
 
 private fun currentTab(destination: androidx.navigation.NavDestination?): MobileTab? {
     return MobileTab.entries.firstOrNull { tab ->
-        destination?.hasRoute(tab.destination::class) == true
+        destination?.route == tab.destination.route
     }
 }
 

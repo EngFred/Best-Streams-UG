@@ -1,20 +1,19 @@
 package com.engineerfred.beststreamsug.mobile.presentation.browse
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -24,6 +23,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -128,114 +129,150 @@ private fun BrowseScreen(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun CategoryGrid(
     categories: List<Category>,
     onCategorySelected: (categoryId: Int, title: String) -> Unit,
     featured: Boolean,
 ) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 6.dp),
-        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
-        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        items(
-            items = categories,
-            key = { "cat_${it.id}" },
-        ) { category ->
-            val interactionSource = remember { MutableInteractionSource() }
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(if (featured) 88.dp else 64.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(category.id.toCategoryColor())
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        onClick = { onCategorySelected(category.id, category.name) },
-                    ),
+        categories.chunked(2).forEach { rowCategories ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                category.imageUrl?.let { url ->
-                    AsyncImage(
-                        model = url.toSafeHttpsUrl(),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
+                rowCategories.forEach { category ->
+                    CategoryTile(
+                        category = category,
+                        featured = featured,
+                        onClick = { onCategorySelected(category.id, category.name) },
+                        modifier = Modifier.weight(1f),
                     )
                 }
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            androidx.compose.ui.graphics.Brush.horizontalGradient(
-                                listOf(
-                                    androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.35f),
-                                    androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.25f),
-                                ),
-                            ),
-                        ),
-                )
-                Text(
-                    text = category.name,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = androidx.compose.ui.graphics.Color.White,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(10.dp),
-                )
+                if (rowCategories.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
             }
         }
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun CategoryTile(
+    category: Category,
+    featured: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    Box(
+        modifier = modifier
+            .height(if (featured) 88.dp else 64.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(category.id.toCategoryColor())
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick,
+            ),
+    ) {
+        category.imageUrl?.let { url ->
+            AsyncImage(
+                model = url.toSafeHttpsUrl(),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+            )
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            Color.Black.copy(alpha = 0.35f),
+                            Color.Black.copy(alpha = 0.25f),
+                        ),
+                    ),
+                ),
+        )
+        Text(
+            text = category.name,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.White,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(10.dp),
+        )
+    }
+}
+
 @Composable
 private fun LanguageGrid(
     languages: List<Language>,
     onLanguageSelected: (languageId: Int, title: String) -> Unit,
 ) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 6.dp),
-        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
-        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        items(
-            items = languages,
-            key = { "lang_${it.id}" },
-        ) { language ->
-            val interactionSource = remember { MutableInteractionSource() }
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(language.id.toCategoryColor())
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        onClick = { onLanguageSelected(language.id, language.name) },
-                    ),
-                contentAlignment = Alignment.CenterStart,
+        languages.chunked(2).forEach { rowLanguages ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text(
-                    text = language.name,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = androidx.compose.ui.graphics.Color.White,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                )
+                rowLanguages.forEach { language ->
+                    LanguageTile(
+                        language = language,
+                        onClick = { onLanguageSelected(language.id, language.name) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (rowLanguages.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun LanguageTile(
+    language: Language,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    Box(
+        modifier = modifier
+            .height(64.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(language.id.toCategoryColor())
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick,
+            ),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Text(
+            text = language.name,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.White,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 12.dp),
+        )
     }
 }

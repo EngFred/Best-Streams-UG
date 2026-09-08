@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -40,7 +39,6 @@ import com.engineerfred.beststreamsug.domain.model.ContentSummary
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicBackground
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicMutedText
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicPrimary
-import com.engineerfred.beststreamsug.mobile.ui.theme.PremiumGold
 import com.engineerfred.beststreamsug.mobile.ui.util.formatMinutes
 import com.engineerfred.beststreamsug.mobile.ui.util.formatRating
 import com.engineerfred.beststreamsug.mobile.ui.util.toSafeHttpsUrl
@@ -50,7 +48,6 @@ fun ContentPosterCard(
     content: ContentSummary,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    showTitle: Boolean = true,
     width: Dp = 120.dp,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -86,21 +83,27 @@ fun ContentPosterCard(
                         ),
                     ),
             )
-            if (content.isPremium) {
-                PremiumTagBadge()
-            }
             if (content.averageRating > 0) {
-                RatingBadge(rating = content.averageRating)
+                RatingBadge(
+                    rating = content.averageRating,
+                    modifier = Modifier.align(Alignment.TopStart),
+                )
             }
-        }
-        if (showTitle) {
+            content.vjName?.let { vjName ->
+                VjNameBadge(
+                    name = vjName,
+                    modifier = Modifier.align(Alignment.TopEnd),
+                )
+            }
             Text(
                 text = content.title,
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = Color.White,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 6.dp),
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(horizontal = 8.dp, vertical = 7.dp),
             )
         }
     }
@@ -111,7 +114,6 @@ fun ContentLandscapeCard(
     content: ContentSummary,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    showTitle: Boolean = false,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     Column(modifier = modifier) {
@@ -142,11 +144,22 @@ fun ContentLandscapeCard(
                         ),
                     ),
             )
-            if (content.isPremium) {
-                Box(modifier = Modifier.align(Alignment.TopStart)) {
-                    PremiumTagBadge()
-                }
+            content.vjName?.let { vjName ->
+                VjNameBadge(
+                    name = vjName,
+                    modifier = Modifier.align(Alignment.TopEnd),
+                )
             }
+            Text(
+                text = content.title,
+                style = androidx.compose.material3.MaterialTheme.typography.titleSmall,
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(8.dp),
+            )
             content.durationMillis?.let { duration ->
                 if (duration > 0) {
                     Box(
@@ -161,23 +174,13 @@ fun ContentLandscapeCard(
                     ) {
                         Text(
                             text = duration.formatMinutes(),
-                            style = MaterialTheme.typography.labelSmall,
+                            style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
                             color = Color.White,
                             fontSize = 10.sp,
                         )
                     }
                 }
             }
-        }
-        if (showTitle) {
-            Text(
-                text = content.title,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 6.dp),
-            )
         }
     }
 }
@@ -220,10 +223,11 @@ fun ContentWideGridCard(
                         ),
                     ),
             )
-            if (content.isPremium) {
-                Box(modifier = Modifier.align(Alignment.TopStart)) {
-                    PremiumTagBadge()
-                }
+            content.vjName?.let { vjName ->
+                VjNameBadge(
+                    name = vjName,
+                    modifier = Modifier.align(Alignment.TopEnd),
+                )
             }
             Column(
                 modifier = Modifier
@@ -290,29 +294,33 @@ fun ContentWideGridCard(
 }
 
 @Composable
-private fun PremiumTagBadge() {
-    Box(
-        modifier = Modifier
+private fun VjNameBadge(
+    name: String,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = name,
+        style = MaterialTheme.typography.labelSmall.copy(
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 9.sp,
+        ),
+        color = Color.White,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = modifier
             .padding(7.dp)
-            .background(PremiumGold, RoundedCornerShape(5.dp))
+            .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(5.dp))
             .padding(horizontal = 6.dp, vertical = 3.dp),
-    ) {
-        Text(
-            text = "PREMIUM",
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = 8.sp,
-            ),
-            color = Color.Black,
-        )
-    }
+    )
 }
 
 @Composable
-private fun BoxScope.RatingBadge(rating: Double) {
+private fun RatingBadge(
+    rating: Double,
+    modifier: Modifier = Modifier,
+) {
     Row(
-        modifier = Modifier
-            .align(Alignment.BottomStart)
+        modifier = modifier
             .padding(7.dp)
             .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(5.dp))
             .padding(horizontal = 6.dp, vertical = 3.dp),
@@ -327,7 +335,10 @@ private fun BoxScope.RatingBadge(rating: Double) {
         )
         Text(
             text = rating.formatRating(),
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 9.sp,
+            ),
             color = Color.White,
         )
     }

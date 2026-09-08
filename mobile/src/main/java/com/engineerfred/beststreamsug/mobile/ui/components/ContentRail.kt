@@ -36,13 +36,11 @@ fun ContentRail(
                     content = item,
                     onClick = { onItemClick(item) },
                     modifier = Modifier.fillMaxWidth(0.72f),
-                    showTitle = false,
                 )
             } else {
                 ContentPosterCard(
                     content = item,
                     onClick = { onItemClick(item) },
-                    showTitle = true,
                 )
             }
         }

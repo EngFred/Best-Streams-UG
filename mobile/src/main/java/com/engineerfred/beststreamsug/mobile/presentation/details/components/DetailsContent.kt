@@ -23,10 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Share
-import androidx.compose.material.icons.rounded.ThumbUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -46,7 +43,6 @@ import com.engineerfred.beststreamsug.mobile.presentation.details.DetailsUiState
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicBackground
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicMutedText
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicPrimary
-import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicSurface
 import com.engineerfred.beststreamsug.mobile.ui.util.formatMinutes
 import com.engineerfred.beststreamsug.mobile.ui.util.formatRating
 import com.engineerfred.beststreamsug.mobile.ui.util.releaseYear
@@ -221,8 +217,8 @@ private fun DetailsMetaSection(
             summary.releaseDate?.let { date ->
                 MetaPill(text = date.releaseYear())
             }
-            if (summary.isPremium) {
-                MetaPill(text = "PREMIUM", highlight = true)
+            summary.vjName?.let { vjName ->
+                MetaPill(text = vjName)
             }
         }
 
@@ -254,18 +250,6 @@ private fun DetailsMetaSection(
                         )
                     }
                 },
-            )
-            DetailsActionButton(
-                icon = Icons.Rounded.ThumbUp,
-                label = "Like",
-                isPrimary = false,
-                onClick = {},
-            )
-            DetailsActionButton(
-                icon = Icons.Rounded.Share,
-                label = "Share",
-                isPrimary = false,
-                onClick = {},
             )
         }
     }
