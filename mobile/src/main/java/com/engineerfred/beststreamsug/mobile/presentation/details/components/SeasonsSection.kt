@@ -16,8 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -26,7 +24,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,6 +48,8 @@ import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicPrimary
 import com.engineerfred.beststreamsug.mobile.ui.util.formatMinutes
 import com.engineerfred.beststreamsug.mobile.ui.util.toSafeHttpsUrl
 
+private const val EPISODES_PAGE_SIZE = 15
+
 @Composable
 fun SeasonsSection(
     state: DetailsUiState,
@@ -55,6 +59,9 @@ fun SeasonsSection(
 ) {
     val seasons = details.seasons.sortedBy { it.sortOrder }
     val selectedSeasonId = state.selectedSeasonId ?: seasons.firstOrNull()?.id
+
+    // Reset visible count whenever the selected season changes
+    var visibleCount by rememberSaveable(selectedSeasonId) { mutableIntStateOf(EPISODES_PAGE_SIZE) }
 
     Column(
         modifier = Modifier
@@ -103,15 +110,38 @@ fun SeasonsSection(
                 )
             }
             else -> {
+                val sortedEpisodes = state.episodes.sortedBy { it.sortOrder }
+                val totalCount = sortedEpisodes.size
+                val visibleEpisodes = sortedEpisodes.take(visibleCount)
+                val remaining = totalCount - visibleEpisodes.size
+
                 Column(
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                     modifier = Modifier.padding(top = 4.dp),
                 ) {
-                    state.episodes.sortedBy { it.sortOrder }.forEach { episode ->
+                    visibleEpisodes.forEach { episode ->
                         EpisodeRow(
                             episode = episode,
-                            index = episode.sortOrder,
                             onPlay = onPlay,
+                        )
+                    }
+
+                    // "Show more" button — only when there are hidden episodes
+                    if (remaining > 0) {
+                        val interactionSource = remember { MutableInteractionSource() }
+                        Text(
+                            text = "Show more episodes ($remaining remaining)",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = CinematicPrimary,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(
+                                    interactionSource = interactionSource,
+                                    indication = null,
+                                    onClick = { visibleCount += EPISODES_PAGE_SIZE },
+                                )
+                                .padding(horizontal = 20.dp, vertical = 14.dp),
                         )
                     }
                 }
@@ -159,7 +189,6 @@ private fun SeasonSelector(
 @Composable
 private fun EpisodeRow(
     episode: Episode,
-    index: Int,
     onPlay: (url: String, title: String?, meta: String?, poster: String?) -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }

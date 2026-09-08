@@ -1,12 +1,5 @@
 package com.engineerfred.beststreamsug.mobile.presentation.browse
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,16 +10,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -49,10 +39,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -60,16 +48,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.engineerfred.beststreamsug.domain.model.Category
-import com.engineerfred.beststreamsug.domain.model.Language
 import com.engineerfred.beststreamsug.mobile.presentation.browse.components.BrowseShimmerSkeleton
 import com.engineerfred.beststreamsug.mobile.ui.components.ErrorState
-import com.engineerfred.beststreamsug.mobile.ui.components.ShimmerImage
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicBackground
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicMutedText
-import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicSurface
-import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicSurfaceContainerHigh
-import com.engineerfred.beststreamsug.mobile.ui.util.toSafeHttpsUrl
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.ChildCare
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.Flight
+import androidx.compose.material.icons.rounded.Movie
+import androidx.compose.material.icons.rounded.Psychology
+import androidx.compose.material.icons.rounded.SentimentVerySatisfied
+import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.TheaterComedy
+import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.Whatshot
 
 enum class BrowseTab(val title: String) {
     Categories("Categories"),
@@ -119,174 +113,210 @@ private fun BrowseScreen(
                 else allLanguages.filter { it.name.contains(searchQuery.trim(), ignoreCase = true) }
             }
 
-            LazyColumn(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(CinematicBackground),
-                contentPadding = PaddingValues(bottom = 96.dp),
+                    .background(CinematicBackground)
             ) {
-                // Screen Header
-                item {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .statusBarsPadding()
-                            .padding(horizontal = 20.dp, vertical = 12.dp),
-                    ) {
-                        Text(
-                            text = "Browse",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                        )
+                // Fixed Header — does not scroll
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                ) {
+                    Text(
+                        text = "Browse",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                    )
 
-                        Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
 
-                        // Search-to-filter bar
-                        BrowseSearchBar(
-                            query = searchQuery,
-                            onQueryChange = { searchQuery = it },
-                            onClear = { searchQuery = "" },
-                        )
+                    BrowseSearchBar(
+                        query = searchQuery,
+                        onQueryChange = { searchQuery = it },
+                        onClear = { searchQuery = "" },
+                    )
 
-                        Spacer(modifier = Modifier.height(18.dp))
+                    Spacer(modifier = Modifier.height(18.dp))
 
-                        // Underline Tabs (Categories / VJ channels)
-                        BrowseTabBar(
-                            selectedTab = selectedTab,
-                            onTabSelected = { selectedTab = it },
-                        )
-                    }
+                    BrowseTabBar(
+                        selectedTab = selectedTab,
+                        onTabSelected = { selectedTab = it },
+                    )
                 }
 
-                when (selectedTab) {
-                    BrowseTab.Categories -> {
-                        val displayCategories = if (searchQuery.isNotBlank() || isCategoriesExpanded) {
-                            filteredCategories
-                        } else {
-                            filteredCategories.take(4)
-                        }
+                // Only this part scrolls
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(
+                        top = 8.dp,
+                        bottom = 96.dp,
+                    ),
+                ) {
+                    when (selectedTab) {
+                        BrowseTab.Categories -> {
+                            val displayCategories =
+                                if (searchQuery.isNotBlank() || isCategoriesExpanded) {
+                                    filteredCategories
+                                } else {
+                                    filteredCategories.take(4)
+                                }
 
-                        if (filteredCategories.isEmpty()) {
-                            item {
-                                BrowseEmptySearch(query = searchQuery)
-                            }
-                        } else {
-                            item {
-                                Text(
-                                    text = "GENRES",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 1.sp,
-                                    color = CinematicMutedText,
-                                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-                                )
-                            }
+                            if (filteredCategories.isEmpty()) {
+                                item {
+                                    BrowseEmptySearch(query = searchQuery)
+                                }
+                            } else {
+                                item {
+                                    Text(
+                                        text = "GENRES",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 1.sp,
+                                        color = CinematicMutedText,
+                                        modifier = Modifier.padding(
+                                            horizontal = 20.dp,
+                                            vertical = 8.dp,
+                                        ),
+                                    )
+                                }
 
-                            item {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 20.dp),
-                                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                                ) {
-                                    displayCategories.chunked(2).forEach { rowCategories ->
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                        ) {
-                                            rowCategories.forEach { category ->
-                                                BrowseCard(
-                                                    title = category.name,
-                                                    id = category.id,
-                                                    imageUrl = category.imageUrl,
-                                                    onClick = { onCategorySelected(category.id, category.name) },
-                                                    modifier = Modifier.weight(1f),
-                                                )
-                                            }
-                                            if (rowCategories.size == 1) {
-                                                Spacer(modifier = Modifier.weight(1f))
+                                item {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 20.dp),
+                                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                                    ) {
+                                        displayCategories.chunked(2).forEach { rowCategories ->
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                            ) {
+                                                rowCategories.forEach { category ->
+                                                    BrowseCard(
+                                                        title = category.name,
+                                                        id = category.id,
+                                                        onClick = {
+                                                            onCategorySelected(
+                                                                category.id,
+                                                                category.name,
+                                                            )
+                                                        },
+                                                        modifier = Modifier.weight(1f),
+                                                    )
+                                                }
+
+                                                if (rowCategories.size == 1) {
+                                                    Spacer(modifier = Modifier.weight(1f))
+                                                }
                                             }
                                         }
                                     }
                                 }
-                            }
 
-                            if (searchQuery.isBlank() && filteredCategories.size > 4) {
-                                item {
-                                    Spacer(modifier = Modifier.height(14.dp))
-                                    BrowseExpandButton(
-                                        isExpanded = isCategoriesExpanded,
-                                        label = if (isCategoriesExpanded) "Show less" else "Show all genres",
-                                        onClick = { isCategoriesExpanded = !isCategoriesExpanded },
-                                        modifier = Modifier.padding(horizontal = 20.dp),
-                                    )
+                                if (searchQuery.isBlank() && filteredCategories.size > 4) {
+                                    item {
+                                        Spacer(modifier = Modifier.height(14.dp))
+
+                                        BrowseExpandButton(
+                                            isExpanded = isCategoriesExpanded,
+                                            label = if (isCategoriesExpanded) {
+                                                "Show less"
+                                            } else {
+                                                "Show all genres"
+                                            },
+                                            onClick = {
+                                                isCategoriesExpanded = !isCategoriesExpanded
+                                            },
+                                            modifier = Modifier.padding(horizontal = 20.dp),
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    BrowseTab.VjChannels -> {
-                        val displayLanguages = if (searchQuery.isNotBlank() || isVjChannelsExpanded) {
-                            filteredLanguages
-                        } else {
-                            filteredLanguages.take(4)
-                        }
+                        BrowseTab.VjChannels -> {
+                            val displayLanguages =
+                                if (searchQuery.isNotBlank() || isVjChannelsExpanded) {
+                                    filteredLanguages
+                                } else {
+                                    filteredLanguages.take(4)
+                                }
 
-                        if (filteredLanguages.isEmpty()) {
-                            item {
-                                BrowseEmptySearch(query = searchQuery)
-                            }
-                        } else {
-                            item {
-                                Text(
-                                    text = "VJ CHANNELS & LANGUAGES",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 1.sp,
-                                    color = CinematicMutedText,
-                                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-                                )
-                            }
+                            if (filteredLanguages.isEmpty()) {
+                                item {
+                                    BrowseEmptySearch(query = searchQuery)
+                                }
+                            } else {
+                                item {
+                                    Text(
+                                        text = "VJ CHANNELS & LANGUAGES",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 1.sp,
+                                        color = CinematicMutedText,
+                                        modifier = Modifier.padding(
+                                            horizontal = 20.dp,
+                                            vertical = 8.dp,
+                                        ),
+                                    )
+                                }
 
-                            item {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 20.dp),
-                                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                                ) {
-                                    displayLanguages.chunked(2).forEach { rowLanguages ->
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                        ) {
-                                            rowLanguages.forEach { language ->
-                                                BrowseCard(
-                                                    title = language.name,
-                                                    id = language.id,
-                                                    imageUrl = null,
-                                                    onClick = { onLanguageSelected(language.id, language.name) },
-                                                    modifier = Modifier.weight(1f),
-                                                )
-                                            }
-                                            if (rowLanguages.size == 1) {
-                                                Spacer(modifier = Modifier.weight(1f))
+                                item {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 20.dp),
+                                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                                    ) {
+                                        displayLanguages.chunked(2).forEach { rowLanguages ->
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                            ) {
+                                                rowLanguages.forEach { language ->
+                                                    BrowseCard(
+                                                        title = language.name,
+                                                        id = language.id,
+                                                        onClick = {
+                                                            onLanguageSelected(
+                                                                language.id,
+                                                                language.name,
+                                                            )
+                                                        },
+                                                        modifier = Modifier.weight(1f),
+                                                    )
+                                                }
+
+                                                if (rowLanguages.size == 1) {
+                                                    Spacer(modifier = Modifier.weight(1f))
+                                                }
                                             }
                                         }
                                     }
                                 }
-                            }
 
-                            if (searchQuery.isBlank() && filteredLanguages.size > 4) {
-                                item {
-                                    Spacer(modifier = Modifier.height(14.dp))
-                                    BrowseExpandButton(
-                                        isExpanded = isVjChannelsExpanded,
-                                        label = if (isVjChannelsExpanded) "Show less" else "Show all VJ channels",
-                                        onClick = { isVjChannelsExpanded = !isVjChannelsExpanded },
-                                        modifier = Modifier.padding(horizontal = 20.dp),
-                                    )
+                                if (searchQuery.isBlank() && filteredLanguages.size > 4) {
+                                    item {
+                                        Spacer(modifier = Modifier.height(14.dp))
+
+                                        BrowseExpandButton(
+                                            isExpanded = isVjChannelsExpanded,
+                                            label = if (isVjChannelsExpanded) {
+                                                "Show less"
+                                            } else {
+                                                "Show all VJ channels"
+                                            },
+                                            onClick = {
+                                                isVjChannelsExpanded = !isVjChannelsExpanded
+                                            },
+                                            modifier = Modifier.padding(horizontal = 20.dp),
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -389,7 +419,7 @@ private fun BrowseTabBar(
                     text = tab.title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    color = if (isSelected) Color.White else CinematicMutedText,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else CinematicMutedText,
                 )
 
                 Spacer(modifier = Modifier.height(6.dp))
@@ -399,7 +429,7 @@ private fun BrowseTabBar(
                         .width(if (isSelected) 36.dp else 0.dp)
                         .height(3.dp)
                         .background(
-                            color = if (isSelected) Color.White else Color.Transparent,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
                             shape = RoundedCornerShape(1.5.dp),
                         ),
                 )
@@ -412,12 +442,12 @@ private fun BrowseTabBar(
 private fun BrowseCard(
     title: String,
     id: Int,
-    imageUrl: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val gradient = remember(id) { id.toHuluCategoryGradient() }
+    val icon = remember(title) { title.toGenreIcon() }
 
     Box(
         modifier = modifier
@@ -428,40 +458,38 @@ private fun BrowseCard(
                 interactionSource = interactionSource,
                 indication = null,
                 onClick = onClick,
-            ),
-    ) {
-        imageUrl?.let { url ->
-            ShimmerImage(
-                model = url.toSafeHttpsUrl(),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
             )
+            .padding(14.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(
-                                Color.Black.copy(alpha = 0.5f),
-                                Color.Black.copy(alpha = 0.25f),
-                            ),
-                        ),
-                    ),
+                    .size(42.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.10f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
         }
-
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(14.dp),
-        )
     }
 }
 
@@ -551,4 +579,21 @@ private fun Int.toHuluCategoryGradient(): Brush {
     )
     val colors = gradients[Math.abs(this) % gradients.size]
     return Brush.horizontalGradient(colors)
+}
+
+private fun String.toGenreIcon() = when (trim().lowercase()) {
+    "action" -> Icons.Rounded.Bolt
+    "adventure" -> Icons.Rounded.Flight
+    "animation" -> Icons.Rounded.ChildCare
+    "comedy" -> Icons.Rounded.SentimentVerySatisfied
+    "crime" -> Icons.Rounded.Shield
+    "documentary" -> Icons.Rounded.Visibility
+    "drama" -> Icons.Rounded.TheaterComedy
+    "fantasy" -> Icons.Rounded.AutoAwesome
+    "horror" -> Icons.Rounded.Whatshot
+    "romance" -> Icons.Rounded.Favorite
+    "sci-fi", "science fiction" -> Icons.Rounded.Psychology
+    "thriller" -> Icons.Rounded.Movie
+    "mystery" -> Icons.Rounded.Visibility
+    else -> Icons.Rounded.Movie
 }

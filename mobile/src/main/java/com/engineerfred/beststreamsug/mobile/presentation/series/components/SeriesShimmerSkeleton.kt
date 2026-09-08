@@ -32,8 +32,6 @@ fun SeriesShimmerSkeleton() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(16f / 10f)
-                    .padding(horizontal = 20.dp),
-                shape = RoundedCornerShape(16.dp),
             )
         }
         repeat(4) {
