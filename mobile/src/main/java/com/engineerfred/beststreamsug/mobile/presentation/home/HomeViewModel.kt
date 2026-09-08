@@ -10,6 +10,7 @@ import com.engineerfred.beststreamsug.domain.usecase.GetHomeCoreContentUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,6 +21,7 @@ data class HomeUiState(
     val isLoading: Boolean = true,
     val content: HomeContent? = null,
     val isCategoryRailsLoading: Boolean = false,
+    val totalCategoryCount: Int = 0,
     val error: AppError? = null,
 )
 
@@ -45,38 +47,37 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val content = getHomeContent()
+                val categories = (content.categories as? AppResult.Success)?.data.orEmpty()
+                val targetCategories = categories.sortedBy { it.sortOrder }.take(8)
+
                 _uiState.value = HomeUiState(
                     isLoading = false,
                     content = content,
-                    isCategoryRailsLoading = true,
+                    isCategoryRailsLoading = targetCategories.isNotEmpty(),
+                    totalCategoryCount = targetCategories.size,
                 )
-                launch {
-                    val categories =
-                        (content.categories as? AppResult.Success)?.data.orEmpty()
-                    if (categories.isEmpty()) {
-                        _uiState.update { it.copy(isCategoryRailsLoading = false) }
-                    } else {
-                        categories
-                            .sortedBy { it.sortOrder }
-                            .take(8)
-                            .forEach { category ->
+
+                if (targetCategories.isNotEmpty()) {
+                    launch {
+                        coroutineScope {
+                            targetCategories.forEach { category ->
                                 launch {
                                     val rail = getHomeCategoryRails(category)
                                     _uiState.update { current ->
                                         val existing = (
                                             current.content?.categoryRails as? AppResult.Success
                                         )?.data.orEmpty()
+                                        val updated = (existing.filterNot { it.category.id == rail.category.id } + rail)
+                                            .sortedBy { it.category.sortOrder }
                                         current.copy(
                                             content = current.content?.copy(
-                                                categoryRails = AppResult.Success(
-                                                    (existing + rail)
-                                                        .sortedBy { it.category.sortOrder },
-                                                ),
+                                                categoryRails = AppResult.Success(updated),
                                             ),
                                         )
                                     }
                                 }
                             }
+                        }
                         _uiState.update { it.copy(isCategoryRailsLoading = false) }
                     }
                 }

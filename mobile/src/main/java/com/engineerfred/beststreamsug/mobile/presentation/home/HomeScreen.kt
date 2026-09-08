@@ -65,6 +65,7 @@ private fun HomeScreen(
             HomeContentScreen(
                 content = content,
                 isCategoryRailsLoading = state.isCategoryRailsLoading,
+                totalCategoryCount = state.totalCategoryCount,
                 onContentSelected = onContentSelected,
                 onOpenCategory = onOpenCategory,
                 onOpenLanguage = onOpenLanguage,
@@ -87,6 +88,7 @@ private fun HomeScreen(
 private fun HomeContentScreen(
     content: HomeContent,
     isCategoryRailsLoading: Boolean,
+    totalCategoryCount: Int,
     onContentSelected: (ContentSummary) -> Unit,
     onOpenCategory: (categoryId: Int, title: String) -> Unit,
     onOpenLanguage: (languageId: Int, title: String) -> Unit,
@@ -127,12 +129,6 @@ private fun HomeContentScreen(
             )
         }
 
-        if (isCategoryRailsLoading) {
-            item {
-                HomeCategoryRailLoadingBlock()
-            }
-        }
-
         items(
             items = categoryRails,
             key = { "rail_${it.category.id}" },
@@ -142,6 +138,16 @@ private fun HomeContentScreen(
                 onContentSelected = onContentSelected,
                 onOpenCategory = onOpenCategory,
             )
+        }
+
+        if (isCategoryRailsLoading) {
+            val loadedCount = categoryRails.size
+            val remainingShimmers = (totalCategoryCount - loadedCount).coerceAtLeast(1)
+            repeat(remainingShimmers) {
+                item(key = "shimmer_home_rail_$it") {
+                    HomeCategoryRailLoadingBlock()
+                }
+            }
         }
     }
 }
