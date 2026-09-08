@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -31,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -231,25 +231,43 @@ private fun DetailsMetaSection(
             )
         }
 
-        // Primary actions
+        // Play button
+        val playInteractionSource = remember { MutableInteractionSource() }
         Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(28.dp))
+                .background(CinematicPrimary)
+                .clickable(
+                    interactionSource = playInteractionSource,
+                    indication = null,
+                    onClick = {
+                        mainSource?.let {
+                            onPlay(
+                                it,
+                                summary.title,
+                                details.categoryNames.firstOrNull(),
+                                summary.landscapeUrl ?: summary.thumbnailUrl,
+                            )
+                        }
+                    },
+                )
+                .padding(horizontal = 20.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
         ) {
-            DetailsActionButton(
-                icon = Icons.Rounded.PlayArrow,
-                label = "Play",
-                isPrimary = true,
-                onClick = {
-                    mainSource?.let {
-                        onPlay(
-                            it,
-                            summary.title,
-                            details.categoryNames.firstOrNull(),
-                            summary.landscapeUrl ?: summary.thumbnailUrl,
-                        )
-                    }
-                },
+            Icon(
+                imageVector = Icons.Rounded.PlayArrow,
+                contentDescription = null,
+                tint = CinematicBackground,
+                modifier = Modifier.size(22.dp),
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(
+                text = "Play",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = CinematicBackground,
             )
         }
     }
@@ -273,36 +291,3 @@ private fun MetaPill(
     )
 }
 
-@Composable
-private fun DetailsActionButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    isPrimary: Boolean,
-    onClick: () -> Unit,
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier
-            .width(72.dp)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick,
-            )
-            .padding(vertical = 4.dp),
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = if (isPrimary) CinematicPrimary else Color.White,
-            modifier = Modifier.size(if (isPrimary) 42.dp else 30.dp),
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = if (isPrimary) Color.White else CinematicMutedText,
-        )
-    }
-}

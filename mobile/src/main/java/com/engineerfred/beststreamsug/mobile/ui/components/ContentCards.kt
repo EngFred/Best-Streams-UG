@@ -3,11 +3,8 @@ package com.engineerfred.beststreamsug.mobile.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,7 +14,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -37,10 +33,8 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.engineerfred.beststreamsug.domain.model.ContentSummary
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicBackground
-import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicMutedText
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicPrimary
 import com.engineerfred.beststreamsug.mobile.ui.util.formatMinutes
-import com.engineerfred.beststreamsug.mobile.ui.util.formatRating
 import com.engineerfred.beststreamsug.mobile.ui.util.toSafeHttpsUrl
 
 @Composable
@@ -83,28 +77,12 @@ fun ContentPosterCard(
                         ),
                     ),
             )
-            if (content.averageRating > 0) {
-                RatingBadge(
-                    rating = content.averageRating,
-                    modifier = Modifier.align(Alignment.TopStart),
-                )
-            }
             content.vjName?.let { vjName ->
                 VjNameBadge(
                     name = vjName,
                     modifier = Modifier.align(Alignment.TopEnd),
                 )
             }
-            Text(
-                text = content.title,
-                style = MaterialTheme.typography.labelMedium,
-                color = Color.White,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(horizontal = 8.dp, vertical = 7.dp),
-            )
         }
     }
 }
@@ -150,16 +128,6 @@ fun ContentLandscapeCard(
                     modifier = Modifier.align(Alignment.TopEnd),
                 )
             }
-            Text(
-                text = content.title,
-                style = androidx.compose.material3.MaterialTheme.typography.titleSmall,
-                color = Color.White,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(8.dp),
-            )
             content.durationMillis?.let { duration ->
                 if (duration > 0) {
                     Box(
@@ -174,7 +142,7 @@ fun ContentLandscapeCard(
                     ) {
                         Text(
                             text = duration.formatMinutes(),
-                            style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                            style = MaterialTheme.typography.labelSmall,
                             color = Color.White,
                             fontSize = 10.sp,
                         )
@@ -229,65 +197,20 @@ fun ContentWideGridCard(
                     modifier = Modifier.align(Alignment.TopEnd),
                 )
             }
-            Column(
+            Box(
                 modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                    .align(Alignment.BottomEnd)
+                    .padding(8.dp)
+                    .background(CinematicPrimary.copy(alpha = 0.95f), RoundedCornerShape(13.dp))
+                    .size(26.dp),
+                contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = content.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = Color.White,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                Icon(
+                    imageVector = Icons.Rounded.PlayArrow,
+                    contentDescription = "Play",
+                    tint = CinematicBackground,
+                    modifier = Modifier.size(18.dp),
                 )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    if (content.averageRating > 0) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(3.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Star,
-                                contentDescription = null,
-                                tint = CinematicPrimary,
-                                modifier = Modifier.size(12.dp),
-                            )
-                            Text(
-                                text = content.averageRating.formatRating(),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = CinematicMutedText,
-                            )
-                        }
-                    }
-                    content.durationMillis?.let { duration ->
-                        if (duration > 0) {
-                            Text(
-                                text = duration.formatMinutes(),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = CinematicMutedText,
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.weight(1f))
-                    Box(
-                        modifier = Modifier
-                            .size(26.dp)
-                            .background(CinematicPrimary.copy(alpha = 0.95f), RoundedCornerShape(13.dp)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.PlayArrow,
-                            contentDescription = "Play",
-                            tint = CinematicBackground,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    }
-                }
             }
         }
     }
@@ -312,34 +235,4 @@ private fun VjNameBadge(
             .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(5.dp))
             .padding(horizontal = 6.dp, vertical = 3.dp),
     )
-}
-
-@Composable
-private fun RatingBadge(
-    rating: Double,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .padding(7.dp)
-            .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(5.dp))
-            .padding(horizontal = 6.dp, vertical = 3.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(3.dp),
-    ) {
-        Icon(
-            imageVector = Icons.Rounded.Star,
-            contentDescription = null,
-            tint = CinematicPrimary,
-            modifier = Modifier.size(12.dp),
-        )
-        Text(
-            text = rating.formatRating(),
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 9.sp,
-            ),
-            color = Color.White,
-        )
-    }
 }
