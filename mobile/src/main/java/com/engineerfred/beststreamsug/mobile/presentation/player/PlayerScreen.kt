@@ -95,6 +95,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.AspectRatioFrameLayout
@@ -141,7 +144,21 @@ fun PlayerRoute(
     var isControlsVisible by remember { mutableStateOf(true) }
     var scaleMode by rememberSaveable { mutableStateOf(VideoScaleMode.Fit) }
     var scaleBadgeText by remember { mutableStateOf<String?>(null) }
+    var resumeBadgeText by rememberSaveable { mutableStateOf<String?>(null) }
     var showExitDialog by rememberSaveable { mutableStateOf(false) }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) {
+                viewModel.saveCurrentProgress()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     var playerViewRef by remember { mutableStateOf<PlayerView?>(null) }
     var positionMs by remember { mutableLongStateOf(0L) }
@@ -182,9 +199,10 @@ fun PlayerRoute(
         }
     }
 
-    // ── Restore Portrait, reset brightness override, and clear auto PiP ─────
+    // ── Restore Portrait, reset brightness override, clear auto PiP, save progress ─
     DisposableEffect(Unit) {
         onDispose {
+            viewModel.saveCurrentProgress()
             activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
             activity?.window?.let { window ->
                 val lp = window.attributes
@@ -253,6 +271,22 @@ fun PlayerRoute(
         if (scaleBadgeText != null) {
             delay(1500L)
             scaleBadgeText = null
+        }
+    }
+
+    // ── Resume progress badge trigger & auto-dismiss ─────────────────────────
+    LaunchedEffect(state.resumeTimestamp) {
+        val resumeMs = state.resumeTimestamp
+        if (resumeMs != null && resumeMs >= 5_000L) {
+            resumeBadgeText = "Resuming from ${formatPlayerTime(resumeMs)}"
+            viewModel.onResumeBadgeShown()
+        }
+    }
+
+    LaunchedEffect(resumeBadgeText) {
+        if (resumeBadgeText != null) {
+            delay(2500L)
+            resumeBadgeText = null
         }
     }
 
@@ -426,9 +460,10 @@ fun PlayerRoute(
             )
         }
 
-        // Scale mode toast badge
+        // Scale mode toast badge & Resume progress feedback badge
+        val activeBadgeText = resumeBadgeText ?: scaleBadgeText
         AnimatedVisibility(
-            visible = scaleBadgeText != null,
+            visible = activeBadgeText != null,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .statusBarsPadding()
@@ -436,7 +471,7 @@ fun PlayerRoute(
             enter = fadeIn() + scaleIn(),
             exit = fadeOut() + scaleOut(),
         ) {
-            scaleBadgeText?.let { label ->
+            activeBadgeText?.let { label ->
                 Box(
                     modifier = Modifier
                         .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(20.dp))

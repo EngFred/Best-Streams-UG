@@ -8,6 +8,7 @@ import com.engineerfred.beststreamsug.data.repository.BrowseRepositoryImpl
 import com.engineerfred.beststreamsug.data.repository.ContentDetailsRepositoryImpl
 import com.engineerfred.beststreamsug.data.repository.EpisodeRepositoryImpl
 import com.engineerfred.beststreamsug.data.repository.MetadataRepositoryImpl
+import com.engineerfred.beststreamsug.data.repository.PlaybackProgressRepositoryImpl
 import com.engineerfred.beststreamsug.data.repository.PlaybackRepositoryImpl
 import com.engineerfred.beststreamsug.data.repository.RelatedContentRepositoryImpl
 import com.engineerfred.beststreamsug.data.repository.SearchRepositoryImpl
@@ -16,6 +17,7 @@ import com.engineerfred.beststreamsug.domain.repository.BannerRepository
 import com.engineerfred.beststreamsug.domain.repository.BrowseRepository
 import com.engineerfred.beststreamsug.domain.repository.ContentDetailsRepository
 import com.engineerfred.beststreamsug.domain.repository.EpisodeRepository
+import com.engineerfred.beststreamsug.domain.repository.PlaybackProgressRepository
 import com.engineerfred.beststreamsug.domain.repository.RelatedContentRepository
 import com.engineerfred.beststreamsug.domain.repository.PlaybackRepository
 import com.engineerfred.beststreamsug.domain.repository.MetadataRepository
@@ -97,4 +99,10 @@ object DataModule {
     fun provideSectionRepository(
         implementation: SectionRepositoryImpl,
     ): SectionRepository = implementation
+
+    @Provides
+    @Singleton
+    fun providePlaybackProgressRepository(
+        implementation: PlaybackProgressRepositoryImpl,
+    ): PlaybackProgressRepository = implementation
 }

@@ -10,5 +10,7 @@ data class PlayerState(
     val error: String? = null,
     // Cast state
     val isCasting: Boolean = false,
-    val castDeviceName: String? = null
+    val castDeviceName: String? = null,
+    // Resume position feedback
+    val resumeTimestamp: Long? = null
 )
