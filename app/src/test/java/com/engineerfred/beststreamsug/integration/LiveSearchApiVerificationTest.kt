@@ -1,6 +1,6 @@
 package com.engineerfred.beststreamsug.integration
 
-import com.engineerfred.beststreamsug.core.network.ApiConfig
+import com.engineerfred.beststreamsug.BuildConfig
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 import okhttp3.MediaType.Companion.toMediaType
@@ -22,7 +22,7 @@ class LiveSearchApiVerificationTest {
             .writeTimeout(10, TimeUnit.SECONDS)
             .build()
         val request = Request.Builder()
-            .url("${ApiConfig.BASE_URL}search_content")
+            .url("${BuildConfig.API_BASE_URL}search_content")
             .post(
                 """{"keyword":"meg","language_id":7,"page_no":1}"""
                     .toRequestBody("application/json".toMediaType()),

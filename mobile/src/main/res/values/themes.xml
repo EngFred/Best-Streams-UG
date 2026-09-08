@@ -1,0 +1,11 @@
+<resources>
+    <style name="Theme.BestStreamsUG" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/app_background</item>
+        <item name="android:colorAccent">@color/brand_violet</item>
+    </style>
+
+    <style name="Theme.BestStreamsUG.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/app_background</item>
+        <item name="postSplashScreenTheme">@style/Theme.BestStreamsUG</item>
+    </style>
+</resources>

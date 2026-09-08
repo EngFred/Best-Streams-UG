@@ -110,7 +110,8 @@ fun PosterCard(
             }
 
             // High-Contrast Frosted Glass VJ Badge
-            if (showVjBadge && content.vjName != null) {
+            val vjName = content.vjName
+            if (showVjBadge && vjName != null) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
@@ -127,7 +128,7 @@ fun PosterCard(
                         .padding(horizontal = 6.dp, vertical = 2.5.dp),
                 ) {
                     Text(
-                        text = content.vjName,
+                        text = vjName,
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                         color = Color.White,
                         maxLines = 1,

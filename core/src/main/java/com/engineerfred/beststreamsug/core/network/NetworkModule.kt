@@ -1,6 +1,5 @@
 package com.engineerfred.beststreamsug.core.network
 
-import com.engineerfred.beststreamsug.BuildConfig
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import dagger.Module
@@ -23,9 +22,11 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideLoggingInterceptor(): HttpLoggingInterceptor =
+    fun provideLoggingInterceptor(
+        networkConfig: NetworkConfig,
+    ): HttpLoggingInterceptor =
         HttpLoggingInterceptor().apply {
-            level = if (BuildConfig.DEBUG) {
+            level = if (networkConfig.isDebug) {
                 HttpLoggingInterceptor.Level.BASIC
             } else {
                 HttpLoggingInterceptor.Level.NONE
@@ -47,10 +48,11 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideRetrofit(
+        networkConfig: NetworkConfig,
         gson: Gson,
         okHttpClient: OkHttpClient,
     ): Retrofit = Retrofit.Builder()
-        .baseUrl(ApiConfig.BASE_URL)
+        .baseUrl(networkConfig.baseUrl)
         .client(okHttpClient)
         .addConverterFactory(GsonConverterFactory.create(gson))
         .build()

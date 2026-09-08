@@ -1,6 +1,6 @@
 package com.engineerfred.beststreamsug.integration
 
-import com.engineerfred.beststreamsug.core.network.ApiConfig
+import com.engineerfred.beststreamsug.BuildConfig
 import com.engineerfred.beststreamsug.data.remote.api.AppApiService
 import com.google.gson.Gson
 import kotlinx.coroutines.runBlocking
@@ -19,7 +19,7 @@ class LiveHomeApiVerificationTest {
     fun setUp() {
         assumeTrue(System.getProperty("runLiveApiTests") == "true")
         api = Retrofit.Builder()
-            .baseUrl(ApiConfig.BASE_URL)
+            .baseUrl(BuildConfig.API_BASE_URL)
             .addConverterFactory(GsonConverterFactory.create(Gson()))
             .build()
             .create(AppApiService::class.java)

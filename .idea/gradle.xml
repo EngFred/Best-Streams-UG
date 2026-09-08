@@ -10,6 +10,10 @@
           <set>
             <option value="/Volumes/DevStorage/AndroidStudioProjects/BestStreamsUG" />
             <option value="/Volumes/DevStorage/AndroidStudioProjects/BestStreamsUG/app" />
+            <option value="/Volumes/DevStorage/AndroidStudioProjects/BestStreamsUG/core" />
+            <option value="/Volumes/DevStorage/AndroidStudioProjects/BestStreamsUG/data" />
+            <option value="/Volumes/DevStorage/AndroidStudioProjects/BestStreamsUG/domain" />
+            <option value="/Volumes/DevStorage/AndroidStudioProjects/BestStreamsUG/mobile" />
           </set>
         </option>
       </GradleProjectSettings>
@@ -20,6 +24,10 @@
           <set>
             <option value="/Volumes/DevStorage/AndroidStudioProjects/BestStreamsUG" />
             <option value="/Volumes/DevStorage/AndroidStudioProjects/BestStreamsUG/app" />
+            <option value="/Volumes/DevStorage/AndroidStudioProjects/BestStreamsUG/core" />
+            <option value="/Volumes/DevStorage/AndroidStudioProjects/BestStreamsUG/data" />
+            <option value="/Volumes/DevStorage/AndroidStudioProjects/BestStreamsUG/domain" />
+            <option value="/Volumes/DevStorage/AndroidStudioProjects/BestStreamsUG/mobile" />
           </set>
         </option>
       </GradleProjectSettings>

@@ -1,6 +1,6 @@
 package com.engineerfred.beststreamsug.integration
 
-import com.engineerfred.beststreamsug.core.network.ApiConfig
+import com.engineerfred.beststreamsug.BuildConfig
 import com.engineerfred.beststreamsug.data.remote.api.AppApiService
 import com.engineerfred.beststreamsug.data.remote.dto.ContentDetailRequest
 import com.google.gson.Gson
@@ -22,7 +22,7 @@ class LivePlaybackApiVerificationTest {
     fun setUp() {
         assumeTrue(System.getProperty("runLiveApiTests") == "true")
         api = Retrofit.Builder()
-            .baseUrl(ApiConfig.BASE_URL)
+            .baseUrl(BuildConfig.API_BASE_URL)
             .addConverterFactory(GsonConverterFactory.create(Gson()))
             .build()
             .create(AppApiService::class.java)
@@ -42,7 +42,7 @@ class LivePlaybackApiVerificationTest {
     @Test
     fun verifiesServerVideoRouteIsUnavailable() = runBlocking {
         val request = Request.Builder()
-            .url("${ApiConfig.BASE_URL}server_video")
+            .url("${BuildConfig.API_BASE_URL}server_video")
             .post(okhttp3.RequestBody.create(null, """{"video_id":1608,"type_id":1,"video_type":1}"""))
             .build()
 
