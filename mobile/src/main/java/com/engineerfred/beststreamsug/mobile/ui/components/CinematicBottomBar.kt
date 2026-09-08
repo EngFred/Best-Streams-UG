@@ -87,7 +87,7 @@ fun CinematicBottomBar(
             if (selectedIndex >= 0) {
                 Box(
                     modifier = Modifier
-                        .align(Alignment.BottomCenter)
+                        .align(Alignment.BottomStart)
                         .offset(x = restOffset)
                         .width(segmentWidth)
                         .height(58.dp),
