@@ -1,11 +1,13 @@
 package com.engineerfred.beststreamsug.mobile.presentation.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -29,7 +31,6 @@ fun HomeRoute(
     onOpenLanguage: (languageId: Int, title: String) -> Unit,
     onOpenSection: (sectionId: Int, title: String) -> Unit,
     onBrowseSelected: () -> Unit,
-    onSearchSelected: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     HomeScreen(
@@ -40,7 +41,6 @@ fun HomeRoute(
         onOpenLanguage = onOpenLanguage,
         onOpenSection = onOpenSection,
         onBrowseSelected = onBrowseSelected,
-        onSearchSelected = onSearchSelected,
     )
 }
 
@@ -53,15 +53,12 @@ private fun HomeScreen(
     onOpenLanguage: (languageId: Int, title: String) -> Unit,
     onOpenSection: (sectionId: Int, title: String) -> Unit,
     onBrowseSelected: () -> Unit,
-    onSearchSelected: () -> Unit,
 ) {
     val content = state.content
 
     when {
         state.isLoading && content == null -> {
-            HomeShimmerSkeleton(
-                onSearchSelected = onSearchSelected,
-            )
+            HomeShimmerSkeleton()
         }
         content != null -> {
             HomeContentScreen(
@@ -72,7 +69,6 @@ private fun HomeScreen(
                 onOpenLanguage = onOpenLanguage,
                 onOpenSection = onOpenSection,
                 onBrowseSelected = onBrowseSelected,
-                onSearchSelected = onSearchSelected,
             )
         }
         else -> {
@@ -95,7 +91,6 @@ private fun HomeContentScreen(
     onOpenLanguage: (languageId: Int, title: String) -> Unit,
     onOpenSection: (sectionId: Int, title: String) -> Unit,
     onBrowseSelected: () -> Unit,
-    onSearchSelected: () -> Unit,
 ) {
     val banners = (content.banners as? AppResult.Success)?.data.orEmpty()
     val sections = (content.sections as? AppResult.Success)?.data
@@ -107,14 +102,13 @@ private fun HomeContentScreen(
         }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 96.dp),
     ) {
         item {
             HomeHeroCarousel(
                 banners = banners,
                 onContentSelected = onContentSelected,
-                onSearchSelected = onSearchSelected,
             )
         }
 

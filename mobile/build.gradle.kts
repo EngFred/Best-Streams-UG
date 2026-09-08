@@ -81,6 +81,7 @@ dependencies {
     // Google Cast & MediaRouter
     implementation(libs.play.services.cast.framework)
     implementation(libs.androidx.mediarouter)
+    implementation(libs.google.material)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

@@ -24,7 +24,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -33,7 +32,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -45,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import com.engineerfred.beststreamsug.domain.model.Banner
 import com.engineerfred.beststreamsug.domain.model.ContentKind
 import com.engineerfred.beststreamsug.domain.model.ContentSummary
+import com.engineerfred.beststreamsug.mobile.ui.components.CastButton
 import com.engineerfred.beststreamsug.mobile.ui.components.ShimmerImage
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicBackground
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicPrimary
@@ -55,10 +54,9 @@ import kotlinx.coroutines.delay
 fun HomeHeroCarousel(
     banners: List<Banner>,
     onContentSelected: (ContentSummary) -> Unit,
-    onSearchSelected: () -> Unit,
 ) {
     if (banners.isEmpty()) {
-        HomeHeroEmpty(onSearchSelected)
+        HomeHeroEmpty()
         return
     }
     val pagerState = rememberPagerState(
@@ -96,20 +94,7 @@ fun HomeHeroCarousel(
                 .background(Color.Black.copy(alpha = 0.45f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            val interactionSource = remember { MutableInteractionSource() }
-            Icon(
-                imageVector = Icons.Rounded.Search,
-                contentDescription = "Search",
-                tint = Color.White,
-                modifier = Modifier
-                    .size(24.dp)
-                    .clip(CircleShape)
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        onClick = onSearchSelected,
-                    ),
-            )
+            CastButton(modifier = Modifier.size(36.dp))
         }
 
         // Indicator dots
@@ -258,7 +243,7 @@ private fun HeroActionButton(
 }
 
 @Composable
-private fun HomeHeroEmpty(onSearchSelected: () -> Unit) {
+private fun HomeHeroEmpty() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -277,19 +262,7 @@ private fun HomeHeroEmpty(onSearchSelected: () -> Unit) {
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
             )
-            val interactionSource = remember { MutableInteractionSource() }
-            Icon(
-                imageVector = Icons.Rounded.Search,
-                contentDescription = "Search",
-                modifier = Modifier
-                    .size(24.dp)
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        onClick = onSearchSelected,
-                    ),
-                tint = MaterialTheme.colorScheme.onSurface,
-            )
+            CastButton(modifier = Modifier.size(36.dp))
         }
     }
 }

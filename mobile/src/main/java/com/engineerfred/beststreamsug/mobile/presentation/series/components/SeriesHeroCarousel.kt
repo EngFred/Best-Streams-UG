@@ -39,6 +39,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.engineerfred.beststreamsug.domain.model.Banner
 import com.engineerfred.beststreamsug.domain.model.ContentSummary
+import com.engineerfred.beststreamsug.mobile.ui.components.CastButton
 import com.engineerfred.beststreamsug.mobile.ui.components.ShimmerImage
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicBackground
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicPrimary
@@ -77,6 +78,17 @@ fun SeriesHeroCarousel(
                 banner = banner,
                 onClick = { onContentSelected(banner.content) },
             )
+        }
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 14.dp, end = 16.dp)
+                .size(44.dp)
+                .background(Color.Black.copy(alpha = 0.45f), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            CastButton(modifier = Modifier.size(36.dp))
         }
 
         if (banners.size > 1) {
@@ -216,13 +228,20 @@ private fun SeriesBrandHeader() {
         modifier = Modifier
             .fillMaxWidth()
             .background(CinematicBackground)
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .padding(horizontal = 20.dp, vertical = 12.dp),
     ) {
-        Text(
-            text = "Series",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                text = "Series",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            CastButton(modifier = Modifier.size(36.dp))
+        }
     }
 }

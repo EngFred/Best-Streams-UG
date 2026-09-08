@@ -1,15 +1,19 @@
 package com.engineerfred.beststreamsug.mobile.presentation
 
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.IntOffset
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -24,6 +28,7 @@ import com.engineerfred.beststreamsug.mobile.presentation.home.HomeRoute
 import com.engineerfred.beststreamsug.mobile.presentation.navigation.MobileDestination
 import com.engineerfred.beststreamsug.mobile.presentation.navigation.MobileTab
 import com.engineerfred.beststreamsug.mobile.presentation.navigation.asContentKind
+import com.engineerfred.beststreamsug.mobile.presentation.cast.CastMiniPlayer
 import com.engineerfred.beststreamsug.mobile.presentation.player.PlayerRoute
 import com.engineerfred.beststreamsug.mobile.presentation.search.SearchRoute
 import com.engineerfred.beststreamsug.mobile.presentation.series.SeriesRoute
@@ -42,6 +47,8 @@ fun BestStreamsMobileApp(
         currentDestination?.route == tab.destination.route
     }
 
+    val showCastMiniPlayer = currentDestination?.route != MobileDestination.Player.route
+
     val openDetails: (ContentSummary) -> Unit = { content ->
         navController.navigate(
             MobileDestination.ContentDetails.createRoute(content.id, content.kind),
@@ -51,11 +58,27 @@ fun BestStreamsMobileApp(
     Scaffold(
         containerColor = CinematicBackground,
         bottomBar = {
-            if (showBottomBar) {
-                CinematicBottomBar(
-                    currentTab = currentTab(currentDestination),
-                    onTabSelected = { tab -> navigateToTab(navController, tab) },
-                )
+            if (showCastMiniPlayer || showBottomBar) {
+                Column(modifier = Modifier.navigationBarsPadding()) {
+                    if (showCastMiniPlayer) {
+                        CastMiniPlayer(
+                            onOpenPlayer = { state ->
+                                navController.navigate(
+                                    MobileDestination.Player.createRoute(
+                                        url = state.streamUrl,
+                                        title = state.title,
+                                    ),
+                                )
+                            },
+                        )
+                    }
+                    if (showBottomBar) {
+                        CinematicBottomBar(
+                            currentTab = currentTab(currentDestination),
+                            onTabSelected = { tab -> navigateToTab(navController, tab) },
+                        )
+                    }
+                }
             }
         },
     ) { innerPadding ->
@@ -63,10 +86,34 @@ fun BestStreamsMobileApp(
             navController = navController,
             startDestination = MobileDestination.Home.route,
             modifier = Modifier.padding(innerPadding),
-            enterTransition = { fadeIn() + slideInHorizontally { it / 3 } },
-            exitTransition = { fadeOut() + slideOutHorizontally { -it / 3 } },
-            popEnterTransition = { fadeIn() + slideInHorizontally { -it / 3 } },
-            popExitTransition = { fadeOut() + slideOutHorizontally { it / 3 } },
+            enterTransition = {
+                if (isForwardNavigation()) {
+                    slideInHorizontally(animationSpec = NavigationSlide) { it }
+                } else {
+                    slideInHorizontally(animationSpec = NavigationSlide) { -it }
+                }
+            },
+            exitTransition = {
+                if (isForwardNavigation()) {
+                    slideOutHorizontally(animationSpec = NavigationSlide) { -it / 3 }
+                } else {
+                    slideOutHorizontally(animationSpec = NavigationSlide) { it / 3 }
+                }
+            },
+            popEnterTransition = {
+                if (isForwardNavigation()) {
+                    slideInHorizontally(animationSpec = NavigationSlide) { it }
+                } else {
+                    slideInHorizontally(animationSpec = NavigationSlide) { -it }
+                }
+            },
+            popExitTransition = {
+                if (isForwardNavigation()) {
+                    slideOutHorizontally(animationSpec = NavigationSlide) { -it }
+                } else {
+                    slideOutHorizontally(animationSpec = NavigationSlide) { it }
+                }
+            },
         ) {
             composable(route = MobileDestination.Home.route) {
                 HomeRoute(
@@ -87,7 +134,6 @@ fun BestStreamsMobileApp(
                         )
                     },
                     onBrowseSelected = { navigateToTab(navController, MobileTab.Browse) },
-                    onSearchSelected = { navigateToTab(navController, MobileTab.Search) },
                 )
             }
             composable(route = MobileDestination.Series.route) {
@@ -234,4 +280,25 @@ private fun navigateToTab(navController: NavHostController, tab: MobileTab) {
         launchSingleTop = true
         restoreState = true
     }
+}
+
+private const val NAV_SLIDE_DURATION = 700
+
+private val NavigationSlide = tween<IntOffset>(durationMillis = NAV_SLIDE_DURATION)
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.isForwardNavigation(): Boolean {
+    val from = destinationLevel(initialState.destination.route)
+    val to = destinationLevel(targetState.destination.route)
+    return to > from
+}
+
+private fun destinationLevel(route: String?): Int = when (route) {
+    MobileDestination.Home.route -> 0
+    MobileDestination.Browse.route -> 1
+    MobileDestination.Series.route -> 2
+    MobileDestination.Search.route -> 3
+    MobileDestination.Catalog.route -> 10
+    MobileDestination.ContentDetails.route -> 20
+    MobileDestination.Player.route -> 30
+    else -> 0
 }

@@ -44,6 +44,9 @@ class CastManager @Inject constructor(
     private val _currentCastStreamUrl = MutableStateFlow("")
     val currentCastStreamUrl: StateFlow<String> = _currentCastStreamUrl.asStateFlow()
 
+    private val _currentCastTitle = MutableStateFlow("")
+    val currentCastTitle: StateFlow<String> = _currentCastTitle.asStateFlow()
+
     private var lastStreamUrl: String = ""
     private var lastTitle: String = ""
     private var lastPosterUrl: String = ""
@@ -62,6 +65,7 @@ class CastManager @Inject constructor(
             val currentMedia = client.mediaInfo
             if (currentMedia != null && currentMedia.contentId.isNotBlank()) {
                 _currentCastStreamUrl.value = currentMedia.contentId
+                _currentCastTitle.value = currentMedia.metadata?.getString(MediaMetadata.KEY_TITLE).orEmpty()
             }
 
             if (isPlaying) {
@@ -77,6 +81,7 @@ class CastManager @Inject constructor(
             val currentMedia = client.mediaInfo
             if (currentMedia != null && currentMedia.contentId.isNotBlank()) {
                 _currentCastStreamUrl.value = currentMedia.contentId
+                _currentCastTitle.value = currentMedia.metadata?.getString(MediaMetadata.KEY_TITLE).orEmpty()
             }
         }
 
@@ -139,6 +144,7 @@ class CastManager @Inject constructor(
         val mediaInfo = client?.mediaInfo
         if (mediaInfo != null && mediaInfo.contentId.isNotBlank()) {
             _currentCastStreamUrl.value = mediaInfo.contentId
+            _currentCastTitle.value = mediaInfo.metadata?.getString(MediaMetadata.KEY_TITLE).orEmpty()
         }
         _isCastPlaying.value = client?.isPlaying == true
         _isCastBuffering.value = client?.playerState == MediaStatus.PLAYER_STATE_BUFFERING
@@ -152,6 +158,7 @@ class CastManager @Inject constructor(
         _isCastPlaying.value = false
         _isCastBuffering.value = false
         _currentCastStreamUrl.value = ""
+        _currentCastTitle.value = ""
         _castError.value = null
     }
 
@@ -195,6 +202,7 @@ class CastManager @Inject constructor(
         lastOverview = overview
 
         _currentCastStreamUrl.value = streamUrl
+        _currentCastTitle.value = title
         _isCastBuffering.value = true
         _castError.value = null
 

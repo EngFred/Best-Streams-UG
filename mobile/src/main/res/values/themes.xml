@@ -1,7 +1,21 @@
 <resources>
-    <style name="Theme.BestStreamsUG" parent="@android:style/Theme.Material.NoActionBar">
+    <style name="Theme.BestStreamsUG" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:windowBackground">@color/app_background</item>
+        <item name="android:colorBackground">@color/app_background</item>
+        <item name="android:colorBackgroundFloating">@color/app_background</item>
         <item name="android:colorAccent">@color/brand_violet</item>
+        <item name="colorPrimary">@color/brand_violet</item>
+        <item name="colorPrimaryDark">@color/brand_violet_deep</item>
+        <item name="colorAccent">@color/brand_violet</item>
+        <item name="mediaRouteTheme">@style/Theme.BestStreamsUG.MediaRouter</item>
+    </style>
+
+    <style name="Theme.BestStreamsUG.MediaRouter">
+        <item name="mediaRouteButtonTint">@color/cast_button_tint</item>
+        <item name="colorPrimary">@color/brand_violet</item>
+        <item name="colorAccent">@color/brand_violet</item>
+        <item name="colorControlActivated">@color/brand_violet</item>
+        <item name="android:colorControlActivated">@color/brand_violet</item>
     </style>
 
     <style name="Theme.BestStreamsUG.Splash" parent="Theme.SplashScreen">

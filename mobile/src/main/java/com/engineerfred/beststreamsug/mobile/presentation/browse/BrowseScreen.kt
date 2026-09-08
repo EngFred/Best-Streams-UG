@@ -68,7 +68,7 @@ private fun BrowseScreen(
             val categories = state.categories.sortedBy { it.sortOrder }
             val languages = state.languages.sortedBy { it.sortOrder }
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
                 contentPadding = PaddingValues(bottom = 96.dp),
             ) {
                 item {

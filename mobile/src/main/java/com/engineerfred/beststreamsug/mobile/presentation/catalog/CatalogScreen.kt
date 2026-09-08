@@ -88,7 +88,7 @@ private fun CatalogScreen(
     onContentSelected: (ContentSummary) -> Unit,
     onBack: () -> Unit,
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         when {
             state.isLoading && state.items.isEmpty() -> {
                 Column(modifier = Modifier.fillMaxSize()) {

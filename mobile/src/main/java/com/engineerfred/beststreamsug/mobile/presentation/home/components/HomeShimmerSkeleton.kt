@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,10 +29,8 @@ import androidx.compose.ui.unit.dp
 import com.engineerfred.beststreamsug.mobile.ui.components.shimmer.ShimmerBox
 
 @Composable
-fun HomeShimmerSkeleton(
-    onSearchSelected: () -> Unit,
-) {
-    Column(modifier = Modifier.fillMaxSize()) {
+fun HomeShimmerSkeleton() {
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         // Hero skeleton (full-bleed 16:10, mirrors HomeHeroCarousel)
         Box(
             modifier = Modifier

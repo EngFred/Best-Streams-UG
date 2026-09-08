@@ -59,7 +59,7 @@ fun DetailsContent(
     onContentSelected: (com.engineerfred.beststreamsug.domain.model.ContentSummary) -> Unit,
 ) {
     LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background),
         contentPadding = PaddingValues(bottom = 24.dp),
     ) {
         item {

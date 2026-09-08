@@ -3,4 +3,11 @@
     <color name="brand_violet_deep">#5B21B6</color>
     <color name="app_background">#08090B</color>
     <color name="ic_launcher_background">#5B21B6</color>
+    <color name="cast_button_tint">#FFFFFFFF</color>
+    <color name="cast_dialog_surface_light">#FFFFFF</color>
+    <color name="cast_dialog_text_light">#1C1B1F</color>
+    <color name="cast_dialog_text_light_secondary">#49454F</color>
+    <color name="cast_dialog_surface_dark">#08090B</color>
+    <color name="cast_dialog_text_dark">#E6E1E5</color>
+    <color name="cast_dialog_text_dark_secondary">#CAC4D0</color>
 </resources>
