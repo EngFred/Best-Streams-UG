@@ -356,7 +356,7 @@ private fun DetailsMetaSection(
                                 it,
                                 summary.title,
                                 vjName ?: details.categoryNames.firstOrNull(),
-                                summary.landscapeUrl ?: summary.thumbnailUrl,
+                                summary.thumbnailUrl ?: summary.landscapeUrl,
                             )
                         }
                     },

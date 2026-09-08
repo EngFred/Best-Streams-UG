@@ -56,4 +56,14 @@ class ContentCatalogCache @Inject constructor() {
             )
             .toList()
     }
+
+    fun findByUrl(streamUrl: String): ContentSummary? {
+        if (streamUrl.isBlank()) return null
+        return cache.values.firstOrNull { it.defaultVideoUrl == streamUrl }
+    }
+
+    fun findByTitle(title: String): ContentSummary? {
+        if (title.isBlank()) return null
+        return cache.values.firstOrNull { it.title.equals(title, ignoreCase = true) }
+    }
 }

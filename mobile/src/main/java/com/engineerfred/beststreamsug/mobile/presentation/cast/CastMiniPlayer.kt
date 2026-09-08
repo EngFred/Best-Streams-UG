@@ -136,8 +136,7 @@ private fun CastMiniBar(
 ) {
     val displayTitle = remember(state.title, state.meta) {
         val meta = state.meta.trim()
-        val isVjName = meta.startsWith("VJ", ignoreCase = true) || meta.contains("VJ", ignoreCase = true)
-        if (meta.isNotBlank() && isVjName && !state.title.contains(" - ") && !state.title.contains(meta, ignoreCase = true)) {
+        if (meta.isNotBlank() && !state.title.contains(meta, ignoreCase = true)) {
             "${state.title} - $meta"
         } else {
             state.title.ifBlank { "Now Casting" }
