@@ -15,7 +15,6 @@ import com.engineerfred.beststreamsug.core.common.AppResult
 import com.engineerfred.beststreamsug.domain.model.ContentSummary
 import com.engineerfred.beststreamsug.domain.model.HomeCategoryRail
 import com.engineerfred.beststreamsug.mobile.ui.components.ContentRail
-import com.engineerfred.beststreamsug.mobile.ui.components.ErrorState
 import com.engineerfred.beststreamsug.mobile.ui.components.SectionHeader
 import com.engineerfred.beststreamsug.mobile.ui.components.shimmer.ShimmerBox
 
@@ -25,6 +24,11 @@ fun HomeCategoryRail(
     onContentSelected: (ContentSummary) -> Unit,
     onOpenCategory: (categoryId: Int, title: String) -> Unit,
 ) {
+    val result = rail.content
+    if (result !is AppResult.Success) return
+    val items = result.data.items
+    if (items.isEmpty()) return
+
     Column(modifier = Modifier.padding(vertical = 8.dp)) {
         SectionHeader(
             title = rail.category.name,
@@ -33,21 +37,10 @@ fun HomeCategoryRail(
             modifier = Modifier.padding(horizontal = 20.dp),
         )
         Spacer(modifier = Modifier.height(8.dp))
-        when (val result = rail.content) {
-            is AppResult.Success -> {
-                ContentRail(
-                    items = result.data.items,
-                    onItemClick = onContentSelected,
-                )
-            }
-            is AppResult.Failure -> {
-                ErrorState(
-                    error = null,
-                    onRetry = {},
-                    modifier = Modifier.height(180.dp),
-                )
-            }
-        }
+        ContentRail(
+            items = items,
+            onItemClick = onContentSelected,
+        )
     }
 }
 

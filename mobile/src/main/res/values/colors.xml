@@ -1,5 +1,6 @@
 <resources>
     <color name="brand_violet">#7C3AED</color>
+    <color name="brand_violet_deep">#5B21B6</color>
     <color name="app_background">#08090B</color>
-    <color name="ic_launcher_background">#08090B</color>
+    <color name="ic_launcher_background">#5B21B6</color>
 </resources>

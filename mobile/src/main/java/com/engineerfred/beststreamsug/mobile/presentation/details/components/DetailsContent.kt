@@ -43,6 +43,7 @@ import com.engineerfred.beststreamsug.mobile.presentation.details.DetailsUiState
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicBackground
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicMutedText
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicPrimary
+import com.engineerfred.beststreamsug.mobile.ui.components.shimmer.ShimmerBox
 import com.engineerfred.beststreamsug.mobile.ui.util.formatMinutes
 import com.engineerfred.beststreamsug.mobile.ui.util.formatRating
 import com.engineerfred.beststreamsug.mobile.ui.util.releaseYear
@@ -111,7 +112,19 @@ fun DetailsContent(
             }
         }
 
-        if (state.relatedContent.isNotEmpty()) {
+        if (state.isLoadingRelated) {
+            item {
+                Text(
+                    text = "More like this",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(start = 20.dp, top = 20.dp, bottom = 10.dp),
+                )
+            }
+            item {
+                RelatedLoadingRow()
+            }
+        } else if (state.relatedContent.isNotEmpty()) {
             item {
                 Text(
                     text = "More like this",
@@ -124,6 +137,24 @@ fun DetailsContent(
                 RelatedRow(
                     items = state.relatedContent,
                     onContentSelected = onContentSelected,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RelatedLoadingRow() {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 20.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        repeat(5) {
+            item {
+                ShimmerBox(
+                    modifier = Modifier
+                        .height(180.dp)
+                        .width(120.dp),
                 )
             }
         }

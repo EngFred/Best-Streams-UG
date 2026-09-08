@@ -4,20 +4,24 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
@@ -25,6 +29,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -32,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,7 +52,13 @@ import com.engineerfred.beststreamsug.mobile.ui.components.ContentPosterCard
 import com.engineerfred.beststreamsug.mobile.ui.components.ContentWideGridCard
 import com.engineerfred.beststreamsug.mobile.ui.components.ErrorState
 import com.engineerfred.beststreamsug.mobile.ui.components.EmptyState
+import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicMutedText
+import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicPrimary
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicSurface
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+
+private const val PREFETCH_THRESHOLD = 6
 
 @Composable
 fun CatalogRoute(
@@ -109,11 +121,21 @@ private fun CatalogScreen(
 
                     val showGrid = state.items.size >= 8
                     val gridState = androidx.compose.foundation.lazy.grid.rememberLazyGridState()
-                    LaunchedEffect(gridState, state.items.size) {
-                        val lastVisible = gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: return@LaunchedEffect
-                        if (lastVisible >= state.items.size - 6 && state.hasMore && !state.isLoadingMore) {
-                            onLoadMore()
+                    LaunchedEffect(gridState) {
+                        snapshotFlow {
+                            val info = gridState.layoutInfo
+                            val lastVisibleIndex = info.visibleItemsInfo.lastOrNull()?.index ?: -1
+                            val totalItems = info.totalItemsCount
+                            lastVisibleIndex in 0 until totalItems &&
+                                lastVisibleIndex >= totalItems - PREFETCH_THRESHOLD
                         }
+                            .distinctUntilChanged()
+                            .filter { nearEnd -> nearEnd }
+                            .collect {
+                                if (state.hasMore && !state.isLoadingMore && !state.isLoading) {
+                                    onLoadMore()
+                                }
+                            }
                     }
 
                     LazyVerticalGrid(
@@ -147,8 +169,15 @@ private fun CatalogScreen(
                             }
                         }
                         if (state.isLoadingMore) {
-                            items(6) {
-                                CatalogListSkeletonItem()
+                            item(
+                                span = { GridItemSpan(maxLineSpan) },
+                            ) {
+                                LoadingMoreFooter()
+                            }
+                            if (showGrid) {
+                                items(3) {
+                                    CatalogGridSkeletonItem()
+                                }
                             }
                         }
                     }
@@ -201,14 +230,39 @@ private fun CatalogHeader(
     }
 }
 
+@Composable
+private fun LoadingMoreFooter() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.size(20.dp),
+            strokeWidth = 2.dp,
+            color = CinematicPrimary,
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        Text(
+            text = "Loading more...",
+            style = MaterialTheme.typography.labelMedium,
+            color = CinematicMutedText,
+        )
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun CatalogListSkeletonItem() {
-    Column(modifier = Modifier.fillMaxWidth()) {
+private fun CatalogGridSkeletonItem() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(2f / 3f),
+    ) {
         com.engineerfred.beststreamsug.mobile.ui.components.shimmer.ShimmerBox(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(96.dp),
+            modifier = Modifier.fillMaxSize(),
             shape = RoundedCornerShape(12.dp),
         )
     }

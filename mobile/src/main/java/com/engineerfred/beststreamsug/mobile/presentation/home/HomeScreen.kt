@@ -26,7 +26,9 @@ fun HomeRoute(
     viewModel: HomeViewModel = hiltViewModel(),
     onContentSelected: (ContentSummary) -> Unit,
     onOpenCategory: (categoryId: Int, title: String) -> Unit,
+    onOpenLanguage: (languageId: Int, title: String) -> Unit,
     onOpenSection: (sectionId: Int, title: String) -> Unit,
+    onBrowseSelected: () -> Unit,
     onSearchSelected: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -35,7 +37,9 @@ fun HomeRoute(
         onRetry = viewModel::refresh,
         onContentSelected = onContentSelected,
         onOpenCategory = onOpenCategory,
+        onOpenLanguage = onOpenLanguage,
         onOpenSection = onOpenSection,
+        onBrowseSelected = onBrowseSelected,
         onSearchSelected = onSearchSelected,
     )
 }
@@ -46,7 +50,9 @@ private fun HomeScreen(
     onRetry: () -> Unit,
     onContentSelected: (ContentSummary) -> Unit,
     onOpenCategory: (categoryId: Int, title: String) -> Unit,
+    onOpenLanguage: (languageId: Int, title: String) -> Unit,
     onOpenSection: (sectionId: Int, title: String) -> Unit,
+    onBrowseSelected: () -> Unit,
     onSearchSelected: () -> Unit,
 ) {
     val content = state.content
@@ -63,7 +69,9 @@ private fun HomeScreen(
                 isCategoryRailsLoading = state.isCategoryRailsLoading,
                 onContentSelected = onContentSelected,
                 onOpenCategory = onOpenCategory,
+                onOpenLanguage = onOpenLanguage,
                 onOpenSection = onOpenSection,
+                onBrowseSelected = onBrowseSelected,
                 onSearchSelected = onSearchSelected,
             )
         }
@@ -84,12 +92,19 @@ private fun HomeContentScreen(
     isCategoryRailsLoading: Boolean,
     onContentSelected: (ContentSummary) -> Unit,
     onOpenCategory: (categoryId: Int, title: String) -> Unit,
+    onOpenLanguage: (languageId: Int, title: String) -> Unit,
     onOpenSection: (sectionId: Int, title: String) -> Unit,
+    onBrowseSelected: () -> Unit,
     onSearchSelected: () -> Unit,
 ) {
     val banners = (content.banners as? AppResult.Success)?.data.orEmpty()
-    val sections = (content.sections as? AppResult.Success)?.data.orEmpty()
+    val sections = (content.sections as? AppResult.Success)?.data
+        .orEmpty()
+        .filter { it.items.isNotEmpty() }
     val categoryRails = (content.categoryRails as? AppResult.Success)?.data.orEmpty()
+        .filter { rail ->
+            (rail.content as? AppResult.Success)?.data?.items?.isNotEmpty() == true
+        }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -110,7 +125,10 @@ private fun HomeContentScreen(
             HomeSectionRail(
                 section = section,
                 onContentSelected = onContentSelected,
+                onOpenCategory = onOpenCategory,
+                onOpenLanguage = onOpenLanguage,
                 onOpenSection = onOpenSection,
+                onBrowseSelected = onBrowseSelected,
             )
         }
 

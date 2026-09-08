@@ -17,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import com.engineerfred.beststreamsug.core.common.AppResult
 import com.engineerfred.beststreamsug.domain.model.ContentSummary
 import com.engineerfred.beststreamsug.domain.model.SeriesCategoryRail
-import com.engineerfred.beststreamsug.mobile.ui.components.ErrorState
 import com.engineerfred.beststreamsug.mobile.ui.components.SectionHeader
 
 @Composable
@@ -26,6 +25,11 @@ fun SeriesCategoryRail(
     onContentSelected: (ContentSummary) -> Unit,
     onOpenCategory: (categoryId: Int, title: String) -> Unit,
 ) {
+    val result = rail.content
+    if (result !is AppResult.Success) return
+    val items = result.data
+    if (items.isEmpty()) return
+
     Column(modifier = Modifier.padding(vertical = 8.dp)) {
         SectionHeader(
             title = rail.categoryName,
@@ -34,28 +38,17 @@ fun SeriesCategoryRail(
             modifier = Modifier.padding(horizontal = 20.dp),
         )
         Spacer(modifier = Modifier.height(8.dp))
-        when (val result = rail.content) {
-            is AppResult.Success -> {
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 20.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    items(
-                        items = result.data,
-                        key = { "series_card_${it.id}" },
-                    ) { item ->
-                        SeriesPosterCard(
-                            content = item,
-                            onClick = { onContentSelected(item) },
-                        )
-                    }
-                }
-            }
-            is AppResult.Failure -> {
-                ErrorState(
-                    error = result.error,
-                    onRetry = {},
-                    modifier = Modifier.height(200.dp),
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            items(
+                items = items,
+                key = { "series_card_${it.id}" },
+            ) { item ->
+                SeriesPosterCard(
+                    content = item,
+                    onClick = { onContentSelected(item) },
                 )
             }
         }
