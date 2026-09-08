@@ -56,6 +56,11 @@ class NewContentNotificationWorker @AssistedInject constructor(
                 Log.w(TAG, "Failed to fetch series sections: ${seriesSections.error}")
             }
 
+            if (movieSections is AppResult.Failure && seriesSections is AppResult.Failure) {
+                Log.w(TAG, "Both movie and series section fetches failed. Retrying later...")
+                return@coroutineScope Result.retry()
+            }
+
             val uniqueItems = allItems.distinctBy { it.id }
             Log.d(TAG, "Total unique items in catalog: ${uniqueItems.size}")
 
