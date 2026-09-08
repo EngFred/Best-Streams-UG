@@ -2,17 +2,6 @@
 <project version="4">
   <component name="deploymentTargetSelector">
     <selectionStates>
-      <SelectionState runConfigName="BestStreamsUG.app">
-        <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-09-05T14:05:41.474074Z">
-          <Target type="DEFAULT_BOOT">
-            <handle>
-              <DeviceId pluginId="Default" identifier="serial=192.168.1.3:5555;connection=7f0f9166" />
-            </handle>
-          </Target>
-        </DropdownSelection>
-        <DialogSelection />
-      </SelectionState>
       <SelectionState runConfigName="BestStreamsUG.mobile">
         <option name="selectionMode" value="DROPDOWN" />
         <DropdownSelection timestamp="2026-09-05T14:05:41.474074Z">

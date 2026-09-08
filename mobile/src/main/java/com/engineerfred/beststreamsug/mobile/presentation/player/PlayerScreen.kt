@@ -1,10 +1,14 @@
 package com.engineerfred.beststreamsug.mobile.presentation.player
 
 import android.app.Activity
+import android.app.PictureInPictureParams
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
+import android.media.AudioManager
+import android.os.Build
+import android.util.Rational
 import android.view.ViewGroup
 import android.view.WindowManager
 import androidx.activity.compose.BackHandler
@@ -19,7 +23,8 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,17 +51,22 @@ import androidx.compose.material.icons.rounded.Forward10
 import androidx.compose.material.icons.rounded.Fullscreen
 import androidx.compose.material.icons.rounded.FullscreenExit
 import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PictureInPictureAlt
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Replay10
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,18 +74,22 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.AspectRatioFrameLayout
@@ -86,6 +100,8 @@ import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicMutedText
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicPrimary
 import kotlinx.coroutines.delay
 import java.util.concurrent.TimeUnit
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 private const val AUTO_HIDE_MS = 4_000L
 private const val SEEK_BUTTON_MS = 10_000L
@@ -116,15 +132,29 @@ fun PlayerRoute(
     val activity = remember(context) { context.findActivity() }
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     var isControlsVisible by remember { mutableStateOf(true) }
     var scaleMode by rememberSaveable { mutableStateOf(VideoScaleMode.Fit) }
     var scaleBadgeText by remember { mutableStateOf<String?>(null) }
+    var showExitDialog by rememberSaveable { mutableStateOf(false) }
 
     var playerViewRef by remember { mutableStateOf<PlayerView?>(null) }
-
     var positionMs by remember { mutableLongStateOf(0L) }
     var castDurationMs by remember { mutableLongStateOf(0L) }
+
+    // ── Brightness / Volume gesture state ────────────────────────────────────
+    val audioManager = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
+    val maxVolume = remember { audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC) }
+    var brightnessIndicator by remember { mutableStateOf<Float?>(null) }
+    var volumeIndicator by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+
+    LaunchedEffect(brightnessIndicator) {
+        if (brightnessIndicator != null) { delay(1500L); brightnessIndicator = null }
+    }
+    LaunchedEffect(volumeIndicator) {
+        if (volumeIndicator != null) { delay(1500L); volumeIndicator = null }
+    }
 
     val insetsController = remember(activity) {
         activity?.window?.let { window ->
@@ -148,11 +178,6 @@ fun PlayerRoute(
         }
     }
 
-    // ── Handle Landscape Back (System Back Gesture) ──────────────────────────
-    BackHandler(enabled = isLandscape) {
-        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-    }
-
     // ── Restore Portrait upon leaving Player ─────────────────────────────────
     DisposableEffect(Unit) {
         onDispose {
@@ -160,8 +185,16 @@ fun PlayerRoute(
         }
     }
 
+    // ── Lock to portrait when casting; restore sensor when not casting ────────
+    LaunchedEffect(state.isCasting) {
+        activity?.requestedOrientation = if (state.isCasting) {
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        } else {
+            ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
+
     // ── Screen Timeout (FLAG_KEEP_SCREEN_ON) ─────────────────────────────────
-    // Keep screen awake ONLY when actively playing locally (not casting)
     val shouldKeepScreenOn = !state.isCasting && state.isPlaying
     DisposableEffect(shouldKeepScreenOn) {
         if (shouldKeepScreenOn) {
@@ -206,40 +239,141 @@ fun PlayerRoute(
         }
     }
 
+    // ── PiP helper ───────────────────────────────────────────────────────────
+    val enterPip: () -> Unit = {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            activity?.enterPictureInPictureMode(
+                PictureInPictureParams.Builder()
+                    .setAspectRatio(Rational(16, 9))
+                    .build()
+            )
+        }
+    }
+
+    // ── Auto-enter PiP when app goes to background while playing locally ─────
+    // Capture stable values to avoid capturing the whole state in the observer
+    val isCastingSnapshot = state.isCasting
+    val isPlayingSnapshot = state.isPlaying
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE) {
+                val alreadyInPip = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    activity?.isInPictureInPictureMode ?: false
+                } else false
+                if (!alreadyInPip && !isCastingSnapshot && isPlayingSnapshot) {
+                    enterPip()
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    // ── Landscape back: rotate back to portrait ──────────────────────────────
+    BackHandler(enabled = isLandscape) {
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+    }
+
+    // ── Portrait back when not casting: show exit confirmation ───────────────
+    BackHandler(enabled = !isLandscape && !state.isCasting) {
+        showExitDialog = true
+    }
+
     val handleBack = {
         if (isLandscape) {
             activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        } else {
+        } else if (state.isCasting) {
             onBack()
+        } else {
+            showExitDialog = true
         }
     }
 
     val handleToggleOrientation = {
-        if (isLandscape) {
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        } else {
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        if (!state.isCasting) {
+            if (isLandscape) {
+                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            } else {
+                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            }
         }
     }
 
     val handleCycleScaleMode = {
-        val nextMode = when (scaleMode) {
-            VideoScaleMode.Fit -> VideoScaleMode.Fill
-            VideoScaleMode.Fill -> VideoScaleMode.Stretch
-            VideoScaleMode.Stretch -> VideoScaleMode.Fit
+        if (!state.isCasting) {
+            val nextMode = when (scaleMode) {
+                VideoScaleMode.Fit -> VideoScaleMode.Fill
+                VideoScaleMode.Fill -> VideoScaleMode.Stretch
+                VideoScaleMode.Stretch -> VideoScaleMode.Fit
+            }
+            scaleMode = nextMode
+            playerViewRef?.resizeMode = nextMode.resizeMode
+            scaleBadgeText = nextMode.label
         }
-        scaleMode = nextMode
-        playerViewRef?.resizeMode = nextMode.resizeMode
-        scaleBadgeText = nextMode.label
     }
+
+    // Snapshot for use inside pointerInput (restarts when casting changes)
+    val isCasting = state.isCasting
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
-            .pointerInput(Unit) {
-                detectTapGestures {
-                    isControlsVisible = !isControlsVisible
+            // Combined tap + vertical drag gesture handler
+            .pointerInput(isCasting) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    val startX = down.position.x
+                    val isLeftSide = startX < size.width / 2f
+                    var totalDy = 0f
+                    var isDragging = false
+                    // Capture current system values fresh at the start of each gesture
+                    var brightnessAccum = activity?.window?.attributes?.screenBrightness
+                        ?.takeIf { it >= 0f } ?: 0.5f
+                    var volumeAccum = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC).toFloat()
+
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        val change = event.changes.firstOrNull { it.id == down.id } ?: break
+
+                        if (!change.pressed) {
+                            // Finger lifted — treat as tap if no drag occurred
+                            if (!isDragging) isControlsVisible = !isControlsVisible
+                            break
+                        }
+
+                        val dy = change.position.y - change.previousPosition.y
+                        totalDy += dy
+
+                        if (!isDragging && abs(totalDy) > viewConfiguration.touchSlop) {
+                            isDragging = true
+                        }
+
+                        if (isDragging && !isCasting) {
+                            change.consume()
+                            // Half screen height = full range (faster feel)
+                            val sensitivity = 1f / (size.height / 2f)
+                            val delta = -dy * sensitivity // swipe UP = increase
+
+                            if (isLeftSide) {
+                                // Left half → Brightness
+                                brightnessAccum = (brightnessAccum + delta).coerceIn(0.01f, 1f)
+                                activity?.window?.let { window ->
+                                    val lp = window.attributes
+                                    lp.screenBrightness = brightnessAccum
+                                    window.attributes = lp
+                                }
+                                brightnessIndicator = brightnessAccum
+                            } else {
+                                // Right half → Volume
+                                volumeAccum = (volumeAccum + delta * maxVolume)
+                                    .coerceIn(0f, maxVolume.toFloat())
+                                val newVol = volumeAccum.roundToInt()
+                                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVol, 0)
+                                volumeIndicator = Pair(newVol, maxVolume)
+                            }
+                        }
+                    }
                 }
             },
     ) {
@@ -269,12 +403,10 @@ fun PlayerRoute(
             )
         }
 
-        // Concentric buffering indicator when controls are hidden
+        // Buffering indicator when controls are hidden
         if (state.isBuffering && !isControlsVisible) {
             CircularProgressIndicator(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .size(56.dp),
+                modifier = Modifier.align(Alignment.Center).size(56.dp),
                 color = Color.White,
                 strokeWidth = 3.5.dp,
             )
@@ -306,6 +438,36 @@ fun PlayerRoute(
             }
         }
 
+        // ── Brightness indicator (left) ───────────────────────────────────────
+        AnimatedVisibility(
+            visible = brightnessIndicator != null,
+            modifier = Modifier.align(Alignment.CenterStart).padding(start = 24.dp),
+            enter = fadeIn() + scaleIn(),
+            exit = fadeOut() + scaleOut(),
+        ) {
+            brightnessIndicator?.let { brightness ->
+                GestureIndicatorBadge(
+                    emoji = "\uD83D\uDD06",
+                    label = "${(brightness * 100).roundToInt()}%",
+                )
+            }
+        }
+
+        // ── Volume indicator (right) ──────────────────────────────────────────
+        AnimatedVisibility(
+            visible = volumeIndicator != null,
+            modifier = Modifier.align(Alignment.CenterEnd).padding(end = 24.dp),
+            enter = fadeIn() + scaleIn(),
+            exit = fadeOut() + scaleOut(),
+        ) {
+            volumeIndicator?.let { (current, max) ->
+                GestureIndicatorBadge(
+                    emoji = "\uD83D\uDD0A",
+                    label = "$current / $max",
+                )
+            }
+        }
+
         AnimatedVisibility(
             visible = isControlsVisible,
             modifier = Modifier.fillMaxSize(),
@@ -316,6 +478,7 @@ fun PlayerRoute(
                 isPlaying = state.isPlaying,
                 isBuffering = state.isBuffering,
                 isLandscape = isLandscape,
+                isCasting = state.isCasting,
                 scaleMode = scaleMode,
                 positionMs = positionMs,
                 durationMs = effectiveDuration,
@@ -328,6 +491,7 @@ fun PlayerRoute(
                 onSeekBy = { deltaMs ->
                     if (deltaMs < 0) viewModel.seekBackward() else viewModel.seekForward()
                 },
+                onEnterPip = enterPip,
             )
         }
 
@@ -344,16 +508,18 @@ fun PlayerRoute(
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White,
                 )
-                PlayerErrorButton(
-                    label = "Try Again",
-                    onClick = viewModel::retryPlayback,
-                )
-                PlayerErrorButton(
-                    label = "Back",
-                    onClick = handleBack,
-                )
+                PlayerErrorButton(label = "Try Again", onClick = viewModel::retryPlayback)
+                PlayerErrorButton(label = "Back", onClick = handleBack)
             }
         }
+    }
+
+    // ── Exit confirmation dialog ──────────────────────────────────────────────
+    if (showExitDialog) {
+        ExitPlayerDialog(
+            onDismiss = { showExitDialog = false },
+            onConfirm = { showExitDialog = false; onBack() },
+        )
     }
 }
 
@@ -407,6 +573,7 @@ private fun PlayerControlsOverlay(
     isPlaying: Boolean,
     isBuffering: Boolean,
     isLandscape: Boolean,
+    isCasting: Boolean,
     scaleMode: VideoScaleMode,
     positionMs: Long,
     durationMs: Long,
@@ -417,6 +584,7 @@ private fun PlayerControlsOverlay(
     onCycleScaleMode: () -> Unit,
     onPlayPause: () -> Unit,
     onSeekBy: (Long) -> Unit,
+    onEnterPip: () -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Box(
@@ -500,14 +668,17 @@ private fun PlayerControlsOverlay(
                 }
             }
 
-            // Aspect Ratio / Scale Mode button
+            // Aspect Ratio / Scale Mode button — disabled & greyed when casting
+            val scaleAlpha = if (isCasting) 0.35f else 1f
             Box(
                 modifier = Modifier
                     .size(40.dp)
+                    .alpha(scaleAlpha)
                     .background(Color.Black.copy(alpha = 0.4f), CircleShape)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
+                        enabled = !isCasting,
                         onClick = onCycleScaleMode,
                     ),
                 contentAlignment = Alignment.Center,
@@ -521,6 +692,29 @@ private fun PlayerControlsOverlay(
             }
 
             Spacer(modifier = Modifier.width(8.dp))
+
+            // PiP button — only shown when not casting
+            if (!isCasting) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(Color.Black.copy(alpha = 0.4f), CircleShape)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = onEnterPip,
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.PictureInPictureAlt,
+                        contentDescription = "Picture in Picture",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+            }
 
             CastButton(modifier = Modifier.size(36.dp))
         }
@@ -628,15 +822,17 @@ private fun PlayerControlsOverlay(
                     )
                 }
 
-                // Screen Rotation button
-                val rotationInteractionSource = remember { MutableInteractionSource() }
+                // Screen Rotation button — disabled & greyed when casting
+                val rotationAlpha = if (isCasting) 0.35f else 1f
                 Box(
                     modifier = Modifier
                         .size(36.dp)
+                        .alpha(rotationAlpha)
                         .background(Color.Black.copy(alpha = 0.4f), CircleShape)
                         .clickable(
-                            interactionSource = rotationInteractionSource,
+                            interactionSource = remember { MutableInteractionSource() },
                             indication = null,
+                            enabled = !isCasting,
                             onClick = onToggleOrientation,
                         ),
                     contentAlignment = Alignment.Center,
@@ -650,6 +846,70 @@ private fun PlayerControlsOverlay(
                 }
             }
         }
+    }
+}
+
+// ── Exit confirmation dialog ───────────────────────────────────────────────────
+@Composable
+private fun ExitPlayerDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Stop Playback?",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+        },
+        text = {
+            Text(
+                text = "Stopping will exit the player.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(
+                    text = "Exit",
+                    color = MaterialTheme.colorScheme.error,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = "Cancel")
+            }
+        },
+    )
+}
+
+// ── Brightness / Volume gesture indicator badge ────────────────────────────────
+@Composable
+private fun GestureIndicatorBadge(
+    emoji: String,
+    label: String,
+) {
+    Row(
+        modifier = Modifier
+            .background(Color.Black.copy(alpha = 0.65f), RoundedCornerShape(20.dp))
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            text = emoji,
+            style = MaterialTheme.typography.labelMedium,
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.White,
+        )
     }
 }
 
