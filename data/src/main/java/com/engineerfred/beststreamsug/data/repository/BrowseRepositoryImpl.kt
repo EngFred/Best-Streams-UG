@@ -2,6 +2,7 @@ package com.engineerfred.beststreamsug.data.repository
 
 import com.engineerfred.beststreamsug.core.common.AppResult
 import com.engineerfred.beststreamsug.core.common.Page
+import com.engineerfred.beststreamsug.data.cache.ContentCatalogCache
 import com.engineerfred.beststreamsug.data.mapper.toDomain
 import com.engineerfred.beststreamsug.data.mapper.resolveVjName
 import com.engineerfred.beststreamsug.data.remote.datasource.BrowseRemoteDataSource
@@ -14,6 +15,7 @@ import javax.inject.Inject
 class BrowseRepositoryImpl @Inject constructor(
     private val remoteDataSource: BrowseRemoteDataSource,
     private val metadataRepository: MetadataRepository,
+    private val catalogCache: ContentCatalogCache,
 ) : BrowseRepository {
     override suspend fun getContentByCategory(
         categoryId: Int,
@@ -23,11 +25,15 @@ class BrowseRepositoryImpl @Inject constructor(
         val languages = metadataRepository.getLanguages()
         val languageMap = (languages as? AppResult.Success)?.data?.associateBy { it.id } ?: emptyMap()
         
-        return remoteDataSource
+        val result = remoteDataSource
             .getContentByCategory(categoryId, pageNumber, sort)
             .mapPageItems { 
                 it.toDomain(it.languageId.resolveVjName { id -> languageMap[id]?.name }) 
             }
+        if (result is AppResult.Success) {
+            catalogCache.insertAll(result.data.items)
+        }
+        return result
     }
 
     override suspend fun getContentByLanguage(
@@ -38,11 +44,15 @@ class BrowseRepositoryImpl @Inject constructor(
         val languages = metadataRepository.getLanguages()
         val languageMap = (languages as? AppResult.Success)?.data?.associateBy { it.id } ?: emptyMap()
 
-        return remoteDataSource
+        val result = remoteDataSource
             .getContentByLanguage(languageId, pageNumber, sort)
             .mapPageItems { 
                 it.toDomain(it.languageId.resolveVjName { id -> languageMap[id]?.name }) 
             }
+        if (result is AppResult.Success) {
+            catalogCache.insertAll(result.data.items)
+        }
+        return result
     }
 }
 

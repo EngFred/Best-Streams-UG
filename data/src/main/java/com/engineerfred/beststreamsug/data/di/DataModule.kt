@@ -1,6 +1,7 @@
 package com.engineerfred.beststreamsug.data.di
 
 import com.engineerfred.beststreamsug.core.network.NetworkErrorMapper
+import com.engineerfred.beststreamsug.data.cache.ContentCatalogCache
 import com.engineerfred.beststreamsug.data.remote.api.AppApiService
 import com.engineerfred.beststreamsug.data.repository.BannerRepositoryImpl
 import com.engineerfred.beststreamsug.data.repository.BrowseRepositoryImpl
@@ -30,6 +31,10 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DataModule {
+    @Provides
+    @Singleton
+    fun provideContentCatalogCache(): ContentCatalogCache = ContentCatalogCache()
+
     @Provides
     @Singleton
     fun provideNetworkErrorMapper(): NetworkErrorMapper = NetworkErrorMapper()
