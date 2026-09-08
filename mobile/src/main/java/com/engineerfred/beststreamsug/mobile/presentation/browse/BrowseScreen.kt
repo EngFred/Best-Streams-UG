@@ -58,12 +58,14 @@ import androidx.compose.material.icons.rounded.ChildCare
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Flight
 import androidx.compose.material.icons.rounded.Movie
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Psychology
 import androidx.compose.material.icons.rounded.SentimentVerySatisfied
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.TheaterComedy
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.Whatshot
+import androidx.compose.ui.graphics.vector.ImageVector
 
 enum class BrowseTab(val title: String) {
     Categories("Categories"),
@@ -289,6 +291,7 @@ private fun BrowseScreen(
                                                             )
                                                         },
                                                         modifier = Modifier.weight(1f),
+                                                        icon = Icons.Rounded.Person,
                                                     )
                                                 }
 
@@ -444,10 +447,10 @@ private fun BrowseCard(
     id: Int,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    icon: ImageVector = title.toGenreIcon(),
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val gradient = remember(id) { id.toHuluCategoryGradient() }
-    val icon = remember(title) { title.toGenreIcon() }
 
     Box(
         modifier = modifier
