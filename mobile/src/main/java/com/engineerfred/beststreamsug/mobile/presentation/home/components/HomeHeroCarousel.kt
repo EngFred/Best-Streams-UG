@@ -66,13 +66,15 @@ fun HomeHeroCarousel(
         pageCount = { banners.size },
     )
 
-    LaunchedEffect(pagerState.currentPage, pagerState.settledPage) {
+    LaunchedEffect(pagerState.settledPage) {
         delay(6000)
-        val nextPage = if (pagerState.currentPage == banners.lastIndex) 0 else pagerState.currentPage + 1
-        pagerState.animateScrollToPage(
-            page = nextPage,
-            animationSpec = tween(700),
-        )
+        if (banners.size > 1 && !pagerState.isScrollInProgress) {
+            val nextPage = (pagerState.settledPage + 1) % banners.size
+            pagerState.animateScrollToPage(
+                page = nextPage,
+                animationSpec = tween(700),
+            )
+        }
     }
 
     Box(modifier = Modifier.fillMaxWidth()) {
@@ -172,7 +174,8 @@ private fun HeroSlide(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(horizontal = 20.dp, vertical = 18.dp),
+                .padding(horizontal = 20.dp)
+                .padding(top = 18.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Row(
