@@ -28,8 +28,6 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -344,55 +342,14 @@ private fun BrowseSearchBar(
     onQueryChange: (String) -> Unit,
     onClear: () -> Unit,
 ) {
-    TextField(
+    com.engineerfred.beststreamsug.mobile.ui.components.AppSearchTextField(
         value = query,
         onValueChange = onQueryChange,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(50.dp),
-        placeholder = {
-            Text(
-                text = "Search categories, VJs, countries",
-                style = MaterialTheme.typography.bodyMedium,
-                color = CinematicMutedText,
-            )
-        },
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Rounded.Search,
-                contentDescription = null,
-                tint = CinematicMutedText,
-                modifier = Modifier.size(20.dp),
-            )
-        },
-        trailingIcon = {
-            if (query.isNotEmpty()) {
-                val interactionSource = remember { MutableInteractionSource() }
-                Icon(
-                    imageVector = Icons.Rounded.Close,
-                    contentDescription = "Clear",
-                    tint = CinematicMutedText,
-                    modifier = Modifier
-                        .clickable(
-                            interactionSource = interactionSource,
-                            indication = null,
-                            onClick = onClear,
-                        )
-                        .padding(8.dp),
-                )
-            }
-        },
-        singleLine = true,
+        placeholder = "Search categories, VJs, countries",
+        onClear = onClear,
+        height = 50.dp,
         shape = RoundedCornerShape(12.dp),
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = Color(0xFF16181D),
-            unfocusedContainerColor = Color(0xFF16181D),
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
-            cursorColor = Color.White,
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White,
-        ),
+        backgroundColor = Color(0xFF16181D),
     )
 }
 

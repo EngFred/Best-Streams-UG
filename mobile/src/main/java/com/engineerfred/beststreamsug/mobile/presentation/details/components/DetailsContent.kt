@@ -1,7 +1,5 @@
 package com.engineerfred.beststreamsug.mobile.presentation.details.components
 
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -31,7 +29,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -71,13 +68,6 @@ fun DetailsContent(
     onContentSelected: (com.engineerfred.beststreamsug.domain.model.ContentSummary) -> Unit,
 ) {
     val listState = rememberLazyListState()
-
-    // True when the list is scrolled to near the very top (backdrop still mostly visible)
-    val isAtTop by remember {
-        derivedStateOf {
-            listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset < 80
-        }
-    }
 
     Box(modifier = Modifier.fillMaxSize()) {
 

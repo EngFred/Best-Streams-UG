@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntOffset
@@ -23,6 +24,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.engineerfred.beststreamsug.domain.model.ContentKind
+import com.engineerfred.beststreamsug.domain.model.ContentSummary
 import com.engineerfred.beststreamsug.mobile.presentation.browse.BrowseRoute
 import com.engineerfred.beststreamsug.mobile.presentation.catalog.CatalogRoute
 import com.engineerfred.beststreamsug.mobile.presentation.details.DetailsRoute
@@ -36,12 +39,21 @@ import com.engineerfred.beststreamsug.mobile.presentation.search.SearchRoute
 import com.engineerfred.beststreamsug.mobile.presentation.series.SeriesRoute
 import com.engineerfred.beststreamsug.mobile.ui.components.CinematicBottomBar
 import com.engineerfred.beststreamsug.mobile.ui.theme.CinematicBackground
-import com.engineerfred.beststreamsug.domain.model.ContentSummary
 
 @Composable
 fun BestStreamsMobileApp(
     navController: NavHostController = rememberNavController(),
+    initialContentId: Int? = null,
+    initialContentKind: ContentKind? = null,
 ) {
+    LaunchedEffect(initialContentId, initialContentKind) {
+        if (initialContentId != null && initialContentId > 0 && initialContentKind != null) {
+            navController.navigate(
+                MobileDestination.ContentDetails.createRoute(initialContentId, initialContentKind),
+            )
+        }
+    }
+
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
 

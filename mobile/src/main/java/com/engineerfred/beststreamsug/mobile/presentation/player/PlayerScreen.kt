@@ -1,10 +1,22 @@
 package com.engineerfred.beststreamsug.mobile.presentation.player
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.view.ViewGroup
+import android.view.WindowManager
+import androidx.activity.compose.BackHandler
 import androidx.annotation.OptIn
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -21,12 +33,18 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AspectRatio
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.CastConnected
+import androidx.compose.material.icons.rounded.CropFree
+import androidx.compose.material.icons.rounded.FitScreen
 import androidx.compose.material.icons.rounded.Forward10
+import androidx.compose.material.icons.rounded.Fullscreen
+import androidx.compose.material.icons.rounded.FullscreenExit
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Replay10
@@ -36,11 +54,13 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +68,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -68,6 +90,16 @@ import java.util.concurrent.TimeUnit
 private const val AUTO_HIDE_MS = 4_000L
 private const val SEEK_BUTTON_MS = 10_000L
 
+enum class VideoScaleMode(
+    val label: String,
+    val resizeMode: Int,
+    val icon: ImageVector,
+) {
+    Fit("Fit (Original)", AspectRatioFrameLayout.RESIZE_MODE_FIT, Icons.Rounded.FitScreen),
+    Fill("Fill (Crop)", AspectRatioFrameLayout.RESIZE_MODE_ZOOM, Icons.Rounded.CropFree),
+    Stretch("Stretch", AspectRatioFrameLayout.RESIZE_MODE_FILL, Icons.Rounded.AspectRatio),
+}
+
 @OptIn(markerClass = [UnstableApi::class])
 @Composable
 fun PlayerRoute(
@@ -80,11 +112,69 @@ fun PlayerRoute(
     val viewModel: PlayerViewModel = hiltViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
 
+    val context = LocalContext.current
+    val activity = remember(context) { context.findActivity() }
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     var isControlsVisible by remember { mutableStateOf(true) }
+    var scaleMode by rememberSaveable { mutableStateOf(VideoScaleMode.Fit) }
+    var scaleBadgeText by remember { mutableStateOf<String?>(null) }
+
+    var playerViewRef by remember { mutableStateOf<PlayerView?>(null) }
 
     var positionMs by remember { mutableLongStateOf(0L) }
     var castDurationMs by remember { mutableLongStateOf(0L) }
 
+    val insetsController = remember(activity) {
+        activity?.window?.let { window ->
+            WindowCompat.getInsetsController(window, window.decorView)
+        }
+    }
+
+    // ── System Bars visibility: hide in landscape, show in portrait ──────────
+    DisposableEffect(isLandscape, insetsController) {
+        insetsController?.let { controller ->
+            if (isLandscape) {
+                controller.systemBarsBehavior =
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                controller.hide(WindowInsetsCompat.Type.systemBars())
+            } else {
+                controller.show(WindowInsetsCompat.Type.systemBars())
+            }
+        }
+        onDispose {
+            insetsController?.show(WindowInsetsCompat.Type.systemBars())
+        }
+    }
+
+    // ── Handle Landscape Back (System Back Gesture) ──────────────────────────
+    BackHandler(enabled = isLandscape) {
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+    }
+
+    // ── Restore Portrait upon leaving Player ─────────────────────────────────
+    DisposableEffect(Unit) {
+        onDispose {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        }
+    }
+
+    // ── Screen Timeout (FLAG_KEEP_SCREEN_ON) ─────────────────────────────────
+    // Keep screen awake ONLY when actively playing locally (not casting)
+    val shouldKeepScreenOn = !state.isCasting && state.isPlaying
+    DisposableEffect(shouldKeepScreenOn) {
+        if (shouldKeepScreenOn) {
+            activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+        onDispose {
+            activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
+
+    // ── Track position ───────────────────────────────────────────────────────
     LaunchedEffect(state.isCasting, state.isPlaying) {
         while (true) {
             if (state.isCasting) {
@@ -100,11 +190,47 @@ fun PlayerRoute(
     val effectiveDuration =
         if (state.isCasting && castDurationMs > 0) castDurationMs else state.duration
 
+    // ── Auto hide controls ───────────────────────────────────────────────────
     LaunchedEffect(isControlsVisible) {
         if (isControlsVisible) {
             delay(AUTO_HIDE_MS)
             isControlsVisible = false
         }
+    }
+
+    // ── Dismiss scale badge after 1.5s ───────────────────────────────────────
+    LaunchedEffect(scaleBadgeText) {
+        if (scaleBadgeText != null) {
+            delay(1500L)
+            scaleBadgeText = null
+        }
+    }
+
+    val handleBack = {
+        if (isLandscape) {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        } else {
+            onBack()
+        }
+    }
+
+    val handleToggleOrientation = {
+        if (isLandscape) {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        } else {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        }
+    }
+
+    val handleCycleScaleMode = {
+        val nextMode = when (scaleMode) {
+            VideoScaleMode.Fit -> VideoScaleMode.Fill
+            VideoScaleMode.Fill -> VideoScaleMode.Stretch
+            VideoScaleMode.Stretch -> VideoScaleMode.Fit
+        }
+        scaleMode = nextMode
+        playerViewRef?.resizeMode = nextMode.resizeMode
+        scaleBadgeText = nextMode.label
     }
 
     Box(
@@ -128,25 +254,56 @@ fun PlayerRoute(
                     PlayerView(ctx).apply {
                         this.player = viewModel.player
                         useController = false
-                        resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
-                        keepScreenOn = true
+                        resizeMode = scaleMode.resizeMode
                         layoutParams = ViewGroup.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.MATCH_PARENT,
                         )
+                        playerViewRef = this
                     }
+                },
+                update = { pv ->
+                    pv.resizeMode = scaleMode.resizeMode
                 },
                 modifier = Modifier.fillMaxSize(),
             )
         }
 
-        if (state.isBuffering) {
+        // Concentric buffering indicator when controls are hidden
+        if (state.isBuffering && !isControlsVisible) {
             CircularProgressIndicator(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .size(56.dp),
                 color = Color.White,
+                strokeWidth = 3.5.dp,
             )
+        }
+
+        // Scale mode toast badge
+        AnimatedVisibility(
+            visible = scaleBadgeText != null,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .statusBarsPadding()
+                .padding(top = 64.dp),
+            enter = fadeIn() + scaleIn(),
+            exit = fadeOut() + scaleOut(),
+        ) {
+            scaleBadgeText?.let { label ->
+                Box(
+                    modifier = Modifier
+                        .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(20.dp))
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                ) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White,
+                    )
+                }
+            }
         }
 
         AnimatedVisibility(
@@ -157,11 +314,16 @@ fun PlayerRoute(
         ) {
             PlayerControlsOverlay(
                 isPlaying = state.isPlaying,
+                isBuffering = state.isBuffering,
+                isLandscape = isLandscape,
+                scaleMode = scaleMode,
                 positionMs = positionMs,
                 durationMs = effectiveDuration,
                 title = title,
                 meta = meta,
-                onBack = onBack,
+                onBack = handleBack,
+                onToggleOrientation = handleToggleOrientation,
+                onCycleScaleMode = handleCycleScaleMode,
                 onPlayPause = viewModel::togglePlayPause,
                 onSeekBy = { deltaMs ->
                     if (deltaMs < 0) viewModel.seekBackward() else viewModel.seekForward()
@@ -188,7 +350,7 @@ fun PlayerRoute(
                 )
                 PlayerErrorButton(
                     label = "Back",
-                    onClick = onBack,
+                    onClick = handleBack,
                 )
             }
         }
@@ -243,11 +405,16 @@ private fun CastingOverlay(
 @Composable
 private fun PlayerControlsOverlay(
     isPlaying: Boolean,
+    isBuffering: Boolean,
+    isLandscape: Boolean,
+    scaleMode: VideoScaleMode,
     positionMs: Long,
     durationMs: Long,
     title: String?,
     meta: String?,
     onBack: () -> Unit,
+    onToggleOrientation: () -> Unit,
+    onCycleScaleMode: () -> Unit,
     onPlayPause: () -> Unit,
     onSeekBy: (Long) -> Unit,
 ) {
@@ -259,7 +426,7 @@ private fun PlayerControlsOverlay(
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            Color.Black.copy(alpha = 0.7f),
+                            Color.Black.copy(alpha = 0.75f),
                             Color.Transparent,
                         ),
                     ),
@@ -274,7 +441,7 @@ private fun PlayerControlsOverlay(
                     Brush.verticalGradient(
                         listOf(
                             Color.Transparent,
-                            Color.Black.copy(alpha = 0.8f),
+                            Color.Black.copy(alpha = 0.85f),
                         ),
                     ),
                 ),
@@ -332,14 +499,35 @@ private fun PlayerControlsOverlay(
                     )
                 }
             }
+
+            // Aspect Ratio / Scale Mode button
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(Color.Black.copy(alpha = 0.4f), CircleShape)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onCycleScaleMode,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = scaleMode.icon,
+                    contentDescription = "Aspect Ratio: ${scaleMode.label}",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
             CastButton(modifier = Modifier.size(36.dp))
         }
 
-        // Center controls
+        // Center controls — strictly centered on screen without asymmetric navigation bar padding
         Row(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .navigationBarsPadding(),
+            modifier = Modifier.align(Alignment.Center),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
         ) {
@@ -347,40 +535,59 @@ private fun PlayerControlsOverlay(
                 icon = Icons.Rounded.Replay10,
                 onClick = { onSeekBy(-SEEK_BUTTON_MS) },
             )
+
+            // Central Play/Pause button with concentric buffering indicator
             Box(
                 modifier = Modifier
                     .padding(horizontal = 24.dp)
-                    .size(72.dp)
-                    .background(Color.White.copy(alpha = 0.2f), CircleShape)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = onPlayPause,
-                    ),
+                    .size(72.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                    contentDescription = if (isPlaying) "Pause" else "Play",
-                    tint = Color.White,
+                // Background circle
+                Box(
                     modifier = Modifier
-                        .size(if (isPlaying) 34.dp else 40.dp)
-                        .padding(start = if (isPlaying) 0.dp else 4.dp),
-                )
+                        .fillMaxSize()
+                        .background(Color.White.copy(alpha = 0.2f), CircleShape)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = onPlayPause,
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                        contentDescription = if (isPlaying) "Pause" else "Play",
+                        tint = Color.White,
+                        modifier = Modifier
+                            .size(if (isPlaying) 34.dp else 40.dp)
+                            .padding(start = if (isPlaying) 0.dp else 4.dp),
+                    )
+                }
+
+                // Buffer indicator perfectly concentric around play/pause circle
+                if (isBuffering) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(72.dp),
+                        color = Color.White,
+                        strokeWidth = 3.5.dp,
+                    )
+                }
             }
+
             PlayerIconButton(
                 icon = Icons.Rounded.Forward10,
                 onClick = { onSeekBy(SEEK_BUTTON_MS) },
             )
         }
 
-        // Bottom progress
+        // Bottom progress & controls bar
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
             LinearProgressIndicator(
                 progress = {
@@ -395,19 +602,52 @@ private fun PlayerControlsOverlay(
                     .fillMaxWidth()
                     .padding(top = 6.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = formatPlayerTime(positionMs),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.White,
-                    fontSize = 11.sp,
-                )
-                Text(
-                    text = formatPlayerTime(durationMs),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.White,
-                    fontSize = 11.sp,
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = formatPlayerTime(positionMs),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White,
+                        fontSize = 11.sp,
+                    )
+                    Text(
+                        text = "/",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.5f),
+                        fontSize = 11.sp,
+                    )
+                    Text(
+                        text = formatPlayerTime(durationMs),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 11.sp,
+                    )
+                }
+
+                // Screen Rotation button
+                val rotationInteractionSource = remember { MutableInteractionSource() }
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(Color.Black.copy(alpha = 0.4f), CircleShape)
+                        .clickable(
+                            interactionSource = rotationInteractionSource,
+                            indication = null,
+                            onClick = onToggleOrientation,
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = if (isLandscape) Icons.Rounded.FullscreenExit else Icons.Rounded.Fullscreen,
+                        contentDescription = if (isLandscape) "Exit Fullscreen" else "Fullscreen / Rotate",
+                        tint = Color.White,
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
             }
         }
     }
@@ -455,6 +695,15 @@ private fun PlayerErrorButton(
             color = Color.Black,
         )
     }
+}
+
+private fun Context.findActivity(): Activity? {
+    var ctx = this
+    while (ctx is ContextWrapper) {
+        if (ctx is Activity) return ctx
+        ctx = ctx.baseContext
+    }
+    return null
 }
 
 private fun formatPlayerTime(millis: Long): String {

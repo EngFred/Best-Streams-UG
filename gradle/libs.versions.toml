@@ -29,7 +29,8 @@ mediarouter = "1.7.0"
 material = "1.12.0"
 jsoup = "1.18.3"
 room = "2.6.1"
-work = "2.9.1"
+work = "2.10.0"
+hiltWork = "1.2.0"
 foundationLayout = "1.12.0"
 tvCompose = "1.0.0"
 #googleServices = "4.4.2"
@@ -67,7 +68,9 @@ androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = 
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 
 ## WorkManager
-#androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
+androidx-hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hiltWork" }
+androidx-hilt-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hiltWork" }
 
 # Firebase
 #firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }

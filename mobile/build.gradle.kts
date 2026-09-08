@@ -83,6 +83,11 @@ dependencies {
     implementation(libs.androidx.mediarouter)
     implementation(libs.google.material)
 
+    // WorkManager & Hilt Work
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
+
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 
